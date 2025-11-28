@@ -2,75 +2,53 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carezone SOP Manual</title>
     
+    <!-- 1. Tải Tailwind CSS để giữ nguyên giao diện -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
+    <!-- 2. Cấu hình Font chữ (Optional nhưng tốt cho thẩm mỹ) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Ẩn thanh cuộn mặc định để nhìn đẹp hơn trên mobile */
-        body { -webkit-tap-highlight-color: transparent; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        body { font-family: 'Inter', sans-serif; }
     </style>
-</head>
-<body class="bg-stone-50">
 
+    <!-- 3. Import Map: Giúp trình duyệt hiểu lệnh 'import' từ thư viện bên ngoài -->
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+        }
+    }
+    </script>
+
+    <!-- 4. Babel để dịch code React JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <!-- Nơi ứng dụng React sẽ hiển thị -->
     <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-
-        // --- XỬ LÝ ICON (FIX LỖI IMPORT) ---
-        // Vì chạy trực tiếp trên trình duyệt không tải được thư viện icon nặng, 
-        // ta tạo một Icon thay thế đại diện cho tất cả các icon trong code của bạn.
-        const GenericIcon = ({ size = 20, className = "", ...props }) => (
-            <svg 
-                width={size} height={size} viewBox="0 0 24 24" 
-                fill="none" stroke="currentColor" strokeWidth="2" 
-                strokeLinecap="round" strokeLinejoin="round" 
-                className={className} {...props}
-            >
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-        );
-
-        // Kỹ thuật Proxy: Dù code bạn gọi Book, Users, hay Flame... nó đều trả về GenericIcon để app không bị lỗi crash.
-        const IconProxy = new Proxy({}, {
-            get: function(target, prop) {
-                return GenericIcon;
-            }
-        });
-
-        // Giả lập dòng import icon của bạn bằng Proxy
-        const { 
-            Book, Users, Clock, UserCheck, Droplets, Flame, Sparkles, Utensils, Wrench, FileText, 
-            BarChart, Wallet, Menu, X, ChevronRight, Search, Info, Activity, ArrowRight, ArrowDown, 
-            Thermometer, AlertTriangle, Star, Heart, Shield, GraduationCap, Briefcase, Network, 
-            ChevronDown, Gavel, ClipboardList, CameraOff, Volume2, Coffee, Stethoscope, MessageSquare, 
-            Music, Wind, Waves, Sun, Smile, Leaf, ChefHat, Receipt, Truck, UtensilsCrossed, Trash2, 
-            AlertCircle, ArrowLeftRight, Zap, FireExtinguisher, Siren, CheckCircle, Headset, Globe, Mail 
-        } = IconProxy;
-
-        // --- BẮT ĐẦU CODE CHÍNH CỦA BẠN ---
-
+    <!-- Code React của bạn -->
+    <script type="text/babel" data-type="module">
         import React, { useState } from 'react';
-import { Book, Users, Clock, UserCheck, Droplets, Flame, Sparkles, Utensils, Wrench, FileText, BarChart, Wallet, Menu, X, ChevronRight, Search, Info, Activity, ArrowRight, ArrowDown, Thermometer, AlertTriangle, Star, Heart, Shield, GraduationCap, Briefcase, Network, ChevronDown, Gavel, ClipboardList, CameraOff, Volume2, Coffee, Stethoscope, MessageSquare, Music, Wind, Waves, Sun, Smile, Leaf, ChefHat, Receipt, Truck, UtensilsCrossed, Trash2, AlertCircle, ArrowLeftRight, Zap, FireExtinguisher, Siren, CheckCircle } from 'lucide-react';
+        import { createRoot } from 'react-dom/client';
+        // Import toàn bộ icon từ lucide-react như code gốc
+        import { 
+            Book, Users, Clock, UserCheck, Droplets, Flame, Sparkles, Utensils, 
+            Wrench, FileText, BarChart, Wallet, Menu, X, ChevronRight, Search, 
+            Info, Activity, ArrowRight, ArrowDown, Thermometer, AlertTriangle, 
+            Star, Heart, Shield, GraduationCap, Briefcase, Network, ChevronDown, 
+            Gavel, ClipboardList, CameraOff, Volume2, Coffee, Stethoscope, 
+            MessageSquare, Music, Wind, Waves, Sun, Smile, Leaf, ChefHat, 
+            Receipt, Truck, UtensilsCrossed, Trash2, AlertCircle, ArrowLeftRight, 
+            Zap, FireExtinguisher, Siren, CheckCircle 
+        } from 'lucide-react';
 
-const CarezoneSOP = () => {
-  const [activeChapter, setActiveChapter] = useState(0);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const sopData = [
-    {
+        // --- BẮT ĐẦU CODE GỐC CỦA BẠN ---
       id: 1,
       title: "Tổng quan & Văn hóa",
       icon: <Info size={20} />,
@@ -3129,3 +3107,4 @@ const CarezoneSOP = () => {
     </script>
 </body>
 </html>
+
