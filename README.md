@@ -4,39 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carezone SOP Manual</title>
-    
-    <!-- 1. Tải Tailwind CSS để giữ nguyên giao diện -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. Cấu hình Font chữ (Optional nhưng tốt cho thẩm mỹ) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
-
-    <!-- 3. Import Map: Giúp trình duyệt hiểu lệnh 'import' từ thư viện bên ngoài -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "lucide-react": "https://esm.sh/lucide-react@0.292.0"
-        }
-    }
-    </script>
-
-    <!-- 4. Babel để dịch code React JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body>
-    <!-- Nơi ứng dụng React sẽ hiển thị -->
+<body class="bg-gray-50">
     <div id="root"></div>
 
-    <!-- Code React của bạn -->
     <script type="text/babel" data-type="module">
-        import React, { useState } from 'react';
-        import { createRoot } from 'react-dom/client';
-        // Import toàn bộ icon từ lucide-react như code gốc
+        // 3. Khai báo thư viện từ CDN (Thay thế cho các lệnh import cũ của bạn)
+        import React, { useState } from 'https://esm.sh/react@18.2.0';
+        import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
         import { 
             Book, Users, Clock, UserCheck, Droplets, Flame, Sparkles, Utensils, 
             Wrench, FileText, BarChart, Wallet, Menu, X, ChevronRight, Search, 
@@ -46,9 +23,17 @@
             MessageSquare, Music, Wind, Waves, Sun, Smile, Leaf, ChefHat, 
             Receipt, Truck, UtensilsCrossed, Trash2, AlertCircle, ArrowLeftRight, 
             Zap, FireExtinguisher, Siren, CheckCircle 
-        } from 'lucide-react';
+        } from 'https://esm.sh/lucide-react';
 
-        // --- BẮT ĐẦU CODE GỐC CỦA BẠN ---
+        // --- DÁN PHẦN CODE CHÍNH CỦA BẠN VÀO DƯỚI DÒNG NÀY ---
+        // (Lưu ý: Bỏ dòng "import..." ở đầu code gốc của bạn đi, chỉ lấy từ "const CarezoneSOP = ..." trở xuống)
+const CarezoneSOP = () => {
+  const [activeChapter, setActiveChapter] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const sopData = [
+    {
       id: 1,
       title: "Tổng quan & Văn hóa",
       icon: <Info size={20} />,
@@ -3101,9 +3086,5 @@
     </div>
   );
 };
-        // Render ra màn hình
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<CarezoneSOP />);
-    </script>
-</body>
-</html>
+
+export default CarezoneSOP;
