@@ -3,112 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carezone SOP Manual</title>
+    <title>Sổ Tay Vận Hành Carezone (SOP)</title>
     
+    <!-- 1. Tailwind CSS (Giao diện) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    
+    <!-- 2. Babel (Dịch code React) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.min.js"></script>
-
     <style>
-        /* Tùy chỉnh thanh cuộn cho đẹp hơn */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        /* Font chữ hệ thống và thanh cuộn đẹp */
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        
+        /* Tùy chỉnh thanh cuộn */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f5f5f4; }
+        ::-webkit-scrollbar-thumb { background: #059669; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #047857; }
+        
+        /* Ẩn thanh cuộn cho tab năng lực nhưng vẫn cuộn được */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Màn hình chờ */
+        #loading { position: fixed; inset: 0; background: white; z-index: 50; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; color: #059669; font-weight: bold; }
+        
+        /* Animation cho blob background */
+        @keyframes blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
         }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #10b981; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #047857; 
-        }
+        .animate-blob { animation: blob 7s infinite; }
+        .animation-delay-2000 { animation-delay: 2s; }
     </style>
 </head>
 <body class="bg-stone-50 text-stone-900">
 
+    <!-- Màn hình chờ tải thư viện -->
+    <div id="loading">
+        <div class="flex flex-col items-center gap-2">
+            <svg class="animate-spin h-8 w-8 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span>Đang tải dữ liệu Carezone...</span>
+        </div>
+    </div>
+
     <div id="root"></div>
 
-    <script type="text/babel">
-        // --- PHẦN KHỞI TẠO MÔI TRƯỜNG ---
-        const { useState, useEffect, useRef } = React;
+    <!-- Script cấu hình React chạy trực tiếp (ES Module) -->
+    <script type="text/babel" data-type="module">
+        // Import thư viện từ Cloud (Không cần cài đặt)
+        import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
         
-        // Lấy tất cả icon từ thư viện LucideReact đã nhúng ở trên
-        // Thay thế dòng import dài của bạn bằng destructuring từ biến global
-        const { 
+        // Import Lucide Icons (Toàn bộ icon)
+        import { 
             Book, Users, Clock, UserCheck, Droplets, Flame, Sparkles, Utensils, Wrench, FileText, 
             BarChart, Wallet, Menu, X, ChevronRight, Search, Info, Activity, ArrowRight, ArrowDown, 
             Thermometer, AlertTriangle, Star, Heart, Shield, GraduationCap, Briefcase, Network, 
             ChevronDown, Gavel, ClipboardList, CameraOff, Volume2, Coffee, Stethoscope, MessageSquare, 
             Music, Wind, Waves, Sun, Smile, Leaf, ChefHat, Receipt, Truck, UtensilsCrossed, Trash2, 
-            AlertCircle, ArrowLeftRight, Zap, FireExtinguisher, Siren, CheckCircle, TrendingUp, Award, 
-            HandHeart, Sparkle, MessageCircle, Send, Loader, RefreshCw 
-        } = lucideReact;
+            AlertCircle, ArrowLeftRight, Zap, FireExtinguisher, Siren, CheckCircle, Award, Target, 
+            TrendingUp, DollarSign, Calculator, Plus, Equal 
+        } from 'https://esm.sh/lucide-react@0.292.0';
 
-        // --- BẮT ĐẦU CODE CỦA BẠN (Đã chỉnh sửa nhẹ phần export) ---
+        // --- BẮT ĐẦU CODE CỦA BẠN ---
 
         const CarezoneSOP = () => {
           const [activeChapter, setActiveChapter] = useState(0);
           const [isSidebarOpen, setIsSidebarOpen] = useState(false);
           const [searchTerm, setSearchTerm] = useState('');
+          const [expandedId, setExpandedId] = useState(null);
           
-          // --- AI FEATURES STATES ---
-          const [isChatOpen, setIsChatOpen] = useState(false);
-          const [chatMessages, setChatMessages] = useState([
-            { role: 'system', text: 'Xin chào! Tôi là trợ lý ảo Carezone. Bạn cần tra cứu quy trình nào?' }
-          ]);
-          const [userQuery, setUserQuery] = useState('');
-          const [isAiThinking, setIsAiThinking] = useState(false);
+          // State mới cho Tab năng lực
+          const [competencyLevel, setCompetencyLevel] = useState(0);
           
-          const [quizData, setQuizData] = useState(null);
-          const [isQuizLoading, setIsQuizLoading] = useState(false);
-          const chatEndRef = useRef(null);
+          // State cho Checklist Tabs (Mục 5.5)
+          const [checklistTab, setChecklistTab] = useState('dauca');
 
-          // API Key placeholder - provided by environment
-          const apiKey = ""; 
-
-          const scrollToBottom = () => {
-            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          const toggleExpand = (id) => {
+            setExpandedId(expandedId === id ? null : id);
           };
 
-          useEffect(() => {
-            scrollToBottom();
-          }, [chatMessages, isChatOpen]);
-
-          // --- DATA ---
-          const levelsData = {
-            tap_su: {
-              title: "KTV Tập sự (Level 1)",
-              desc: "Học việc",
-              color: "stone",
-              culture: ["Ham học hỏi: Sẵn sàng ghi chép, thực hành.", "Tuân thủ: Đúng giờ, đúng đồng phục, quy trình vệ sinh.", "Trung thực: Báo cáo đúng sự thật."],
-              skills: ["Massage cơ bản: Foot, Body Aroma, Gội đầu.", "Setup phòng: Thay ga, gấp khăn, đốt tinh dầu.", "Quan sát: Hỗ trợ các KTV chính."],
-              knowledge: ["Sản phẩm: Tên & giá các gói dịch vụ cơ bản.", "Địa điểm: Sơ đồ phòng trị liệu, kho vật tư.", "Quy định: Nội quy Spa, an toàn lao động."]
+          const competencyData = [
+            {
+              level: "Tập sự",
+              sub: "Học việc",
+              color: "bg-stone-100 text-stone-600",
+              reqs: {
+                culture: ["Ham học hỏi: Sẵn sàng ghi chép.", "Tuân thủ: Đúng giờ, đúng đồng phục.", "Trung thực: Báo cáo đúng sự thật."],
+                skills: ["Giao tiếp cơ bản: Chào, Cười, Cảm ơn.", "Thao tác máy: Sử dụng cơ bản.", "Quan sát: Bao quát sảnh."],
+                knowledge: ["Sản phẩm: Tên & giá các gói cơ bản.", "Địa điểm: Sơ đồ tòa nhà, WC.", "Quy định: Nội quy lao động."]
+              }
             },
-            chinh_thuc: {
-              title: "KTV Chính thức (Level 2)",
-              desc: "Thạo nghề",
-              color: "emerald",
-              culture: ["Chuyên nghiệp: Thái độ phục vụ ân cần, giọng nói nhẹ nhàng.", "Trách nhiệm: Tự quản lý phòng trị liệu và dụng cụ.", "Hợp tác: Hỗ trợ đồng nghiệp trong ca."],
-              skills: ["Trị liệu nâng cao: Thái, Đá nóng, Bầu, Shiatsu.", "Tư vấn: Nhận biết tình trạng sức khỏe khách để gợi ý bài.", "Xử lý tình huống: Giải quyết thắc mắc cơ bản."],
-              knowledge: ["Chuyên sâu: Huyệt đạo, công dụng tinh dầu.", "Quy trình: Check-in/Check-out, xử lý đồ vải.", "KPI: Hiểu cách tính lương & năng suất."]
+            {
+              level: "Chính thức",
+              sub: "Thạo việc",
+              color: "bg-emerald-100 text-emerald-800",
+              reqs: {
+                culture: ["Tận tâm: Chủ động hỗ trợ khách.", "Chuyên nghiệp: Kiểm soát cảm xúc tốt.", "Hợp tác: Phối hợp tốt với bộ phận khác."],
+                skills: ["Tư vấn bán thêm: Thuyết phục khách mua.", "Giải quyết vấn đề: Xử lý phàn nàn nhẹ.", "Tốc độ: Thao tác nhanh, chính xác."],
+                knowledge: ["Chuyên sâu: Công dụng Onsen/Jjim.", "Chính sách: Quyền lợi thẻ Hội viên.", "Quy trình: Xử lý sự cố thường gặp."]
+              }
             },
-            truong_nhom: {
-              title: "KTV Trưởng nhóm (Level 3)",
-              desc: "Quản lý & Đào tạo",
-              color: "purple",
-              culture: ["Gương mẫu: Là hình mẫu về tay nghề và thái độ.", "Dẫn dắt: Động viên tinh thần nhân viên trong ca.", "Công bằng: Phân chia tour công tâm."],
-              skills: ["Đào tạo: Hướng dẫn kỹ thuật cho nhân viên mới.", "Quản lý ca: Sắp xếp lịch trực, kiểm tra vệ sinh đầu/cuối ca.", "Giải quyết khiếu nại: Xử lý complaint cấp độ 1."],
-              knowledge: ["Báo cáo: Làm báo cáo ngày, kiểm kê kho.", "Hệ thống: Sử dụng thành thạo phần mềm POS/CRM.", "Đánh giá: Kỹ năng đánh giá tay nghề nhân viên."]
+            {
+              level: "Trưởng nhóm",
+              sub: "Quản lý ca",
+              color: "bg-purple-100 text-purple-800",
+              reqs: {
+                culture: ["Chịu trách nhiệm: Nhận lỗi về mình.", "Làm gương: Chuẩn mực cho nhân viên.", "Tích cực: Truyền năng lượng cho team."],
+                skills: ["Đào tạo: Kèm cặp nhân viên mới.", "Quản lý: Sắp xếp lịch làm việc.", "Tin học: Excel/Báo cáo cơ bản."],
+                knowledge: ["Tâm lý: Hiểu tính cách khách hàng.", "Rủi ro: Xử lý khủng hoảng.", "Quản trị: Chỉ số vận hành & nhân sự."]
+              }
+            },
+            {
+              level: "Quản lý",
+              sub: "Điều hành",
+              color: "bg-orange-100 text-orange-800",
+              reqs: {
+                culture: ["Tư duy làm chủ: Coi Cty như nhà.", "Tầm nhìn: Định hướng dài hạn.", "Quyết đoán: Ra quyết định kịp thời."],
+                skills: ["Hoạch định: Chiến lược kinh doanh.", "Nhân sự: Tuyển dụng & Giữ chân.", "Phân tích: Đọc hiểu số liệu."],
+                knowledge: ["Tài chính: Quản lý Lời/Lỗ.", "Thị trường: Xu hướng Wellness.", "Pháp lý: Luật lao động."]
+              }
             }
-          };
+          ];
 
           const sopData = [
             {
@@ -120,8 +139,8 @@
                   <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
                     <h3 className="font-bold text-emerald-800 text-lg mb-2">Thông tin tài liệu</h3>
                     <ul className="list-none space-y-1 text-sm">
-                      <li><strong>Mã tài liệu:</strong> CZ-OPS-MANUAL-2025</li>
-                      <li><strong>Phiên bản:</strong> 2.8 (Tiếng Việt hóa)</li>
+                      <li><strong>Mã tài liệu:</strong> CZ-CSKH-MANUAL-2025</li>
+                      <li><strong>Phiên bản:</strong> 3.6 (Đã cập nhật cấu trúc chương)</li>
                       <li><strong>Ngày hiệu lực:</strong> 01/12/2025</li>
                     </ul>
                   </div>
@@ -134,7 +153,7 @@
                       <h4 className="font-bold text-emerald-800 mb-2 text-sm">Các lĩnh vực kinh doanh chính của CareZone gồm:</h4>
                       <ul className="list-disc pl-5 space-y-1 text-sm text-stone-700">
                         <li><strong>Onsen & Jjimjilbang:</strong> Xông hơi Hàn – tắm khoáng Nhật.</li>
-                        <li><strong>Spa & Massage trị liệu.</strong></li>
+                        <li><strong>Spa & Mát-xa trị liệu.</strong></li>
                         <li><strong>Nhà hàng thực dưỡng.</strong></li>
                         <li><strong>Không gian nghỉ dưỡng – kết nối cộng đồng.</strong></li>
                       </ul>
@@ -283,7 +302,7 @@
                                 <ul className="text-xs text-stone-600 pl-6 list-disc">
                                    <li>Chuyên viên HCNS tổng hợp</li>
                                    <li>Tạp vụ</li>
-                                   <li className="font-semibold text-emerald-700">Bảo vệ</li>
+                                   <li>Bảo vệ</li>
                                 </ul>
                               </div>
                               <div className="space-y-1">
@@ -306,15 +325,15 @@
                         <div className="bg-white rounded-xl shadow-sm border-l-4 border-blue-500 overflow-hidden">
                           <div className="bg-blue-50 p-3 border-b border-blue-100 flex items-center gap-2">
                             <div className="w-8 h-8 rounded bg-blue-200 flex items-center justify-center text-blue-700 font-bold">B</div>
-                            <h4 className="font-bold text-blue-800 uppercase text-sm">Khối Kinh Doanh & Marketing</h4>
+                            <h4 className="font-bold text-blue-800 uppercase text-sm">Khối Kinh Doanh & Tiếp Thị</h4>
                           </div>
                           <div className="p-4">
                               <div className="space-y-1">
-                                <strong className="text-blue-900 text-sm flex items-center gap-2"><Activity size={14}/> Phòng Sales & Marketing</strong>
+                                <strong className="text-blue-900 text-sm flex items-center gap-2"><Activity size={14}/> Phòng Kinh Doanh & Tiếp Thị</strong>
                                 <ul className="text-xs text-stone-600 pl-6 list-disc grid md:grid-cols-2 gap-x-4">
-                                   <li>Trưởng phòng Marketing</li>
-                                   <li>Chuyên viên Nội dung & Digital</li>
-                                   <li>Nhân viên Sales / CSKH Online</li>
+                                   <li>Trưởng phòng Tiếp thị</li>
+                                   <li>Chuyên viên Nội dung & Số hóa</li>
+                                   <li>Nhân viên Kinh doanh / CSKH Trực tuyến</li>
                                 </ul>
                               </div>
                           </div>
@@ -333,7 +352,7 @@
                           </div>
                           <div className="p-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                               <div className="bg-orange-50/30 p-2 rounded border border-orange-100">
-                                <div className="font-bold text-xs text-orange-900 uppercase mb-1">CSKH Offline</div>
+                                <div className="font-bold text-xs text-orange-900 uppercase mb-1">CSKH Trực tiếp</div>
                                 <ul className="text-[10px] text-stone-600 list-disc pl-4">
                                   <li>Trưởng bộ phận</li>
                                   <li>Nhân viên CSKH</li>
@@ -347,7 +366,7 @@
                                 </ul>
                               </div>
                               <div className="bg-orange-50/30 p-2 rounded border border-orange-100">
-                                <div className="font-bold text-xs text-orange-900 uppercase mb-1">Spa & Massage</div>
+                                <div className="font-bold text-xs text-orange-900 uppercase mb-1">Spa & Mát-xa</div>
                                 <ul className="text-[10px] text-stone-600 list-disc pl-4">
                                   <li>Quản lý Spa</li>
                                   <li>Kỹ thuật viên</li>
@@ -377,26 +396,26 @@
               )
             },
             {
-              id: 3,
+              id: 4,
               title: "Hành trình khách hàng",
               icon: <Book size={20} />,
               content: (
                 <div className="space-y-6 text-stone-800">
-                    <div className="bg-blue-50 p-3 rounded border border-blue-100 text-sm text-blue-800 flex items-start gap-2">
+                   <div className="bg-blue-50 p-3 rounded border border-blue-100 text-sm text-blue-800 flex items-start gap-2">
                     <Info size={16} className="mt-1 flex-shrink-0"/>
-                    <div>Carezone áp dụng công nghệ quản lý hiện đại bằng <strong>vòng tay thông minh RFID</strong> để tạo ra trải nghiệm "không chạm" và "không tiền mặt" trong suốt hành trình của khách hàng (sau khi checkin).</div>
+                    <div>Carezone áp dụng công nghệ quản lý hiện đại bằng <strong>vòng tay thông minh</strong> để tạo ra trải nghiệm "không chạm" và "không tiền mặt" trong suốt hành trình của khách hàng (sau khi làm thủ tục).</div>
                   </div>
 
                   <section>
-                    <h3 className="text-xl font-bold text-emerald-700 mb-3">3.1. Quy trình Đón tiếp và Check-in (Lễ tân)</h3>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-3">4.1. Quy trình Đón tiếp và Làm thủ tục (CSKH Trực tiếp)</h3>
                     <p className="text-sm text-stone-500 italic mb-2"><strong>Mục đích:</strong> Đảm bảo khách hàng được tiếp đón đầy đủ, tư vấn rõ ràng và hiểu rõ quy định trước khi vào khu vực dịch vụ.</p>
                     
                     <div className="space-y-4">
                       <div className="bg-white p-4 rounded shadow-sm border-l-4 border-emerald-500">
                         <h4 className="font-bold text-emerald-800 mb-1">1. Chào đón & Phân loại</h4>
                         <ul className="list-disc pl-4 text-sm text-stone-700">
-                          <li>Nhân viên Lễ tân chào khách ngay khi khách bước vào sảnh.</li>
-                          <li>Hỏi thông tin đặt lịch hoặc nhu cầu sử dụng dịch vụ (Onsen lẻ, Combo, Massage, Jjimjilbang).</li>
+                          <li>Nhân viên CSKH Trực tiếp chào khách ngay khi khách bước vào sảnh.</li>
+                          <li>Hỏi thông tin đặt lịch hoặc nhu cầu sử dụng dịch vụ (Onsen lẻ, Combo, Mát-xa, Jjimjilbang).</li>
                         </ul>
                       </div>
 
@@ -404,15 +423,15 @@
                         <h4 className="font-bold text-emerald-800 mb-1">2. Tư vấn & Đăng ký</h4>
                         <ul className="list-disc pl-4 text-sm text-stone-700">
                           <li>Tư vấn các gói khuyến mãi hiện hành (ví dụ: Mua 1 tặng 1).</li>
-                          <li>Xin khách cung cấp thông tin cơ bản (Họ tên, SĐT) để tích điểm hoặc kiểm tra Thẻ hội viên.</li>
+                          <li>Xin khách cung cấp thông tin cơ bản (Họ tên, SĐT) để tích điểm hoặc kiểm tra Hội viên.</li>
                         </ul>
                       </div>
 
                       <div className="bg-white p-4 rounded shadow-sm border-l-4 border-emerald-500">
-                        <h4 className="font-bold text-emerald-800 mb-1">3. Thu phí & Cấp vòng tay RFID</h4>
+                        <h4 className="font-bold text-emerald-800 mb-1">3. Cấp vòng tay chip (Check-in)</h4>
                         <ul className="list-disc pl-4 text-sm text-stone-700">
-                          <li>Thực hiện thu tiền vé vào cửa (hoặc xác nhận voucher).</li>
-                          <li>Kích hoạt vòng tay RFID trên hệ thống POS. (Vai trò: Chìa khóa tủ giày, tủ Locker, ví điện tử).</li>
+                          <li>Xác nhận khách đã thanh toán tại Thu ngân (hoặc khách dùng Voucher/Thẻ thành viên).</li>
+                          <li>Kích hoạt vòng tay chip trên hệ thống máy bán hàng. (Vai trò: Chìa khóa tủ giày, tủ đồ, ví điện tử).</li>
                           <li>Giao vòng tay cho khách.</li>
                         </ul>
                       </div>
@@ -420,17 +439,17 @@
                       <div className="bg-white p-4 rounded shadow-sm border-l-4 border-emerald-500">
                         <h4 className="font-bold text-emerald-800 mb-1">4. Hướng dẫn ban đầu</h4>
                         <ul className="list-disc pl-4 text-sm text-stone-700">
-                          <li>Hướng dẫn khách cởi giày tại khu vực tủ giày và sử dụng vòng tay để khóa tủ.</li>
+                          <li>Hướng dẫn khách cởi giày tại khu vực Tủ giày và sử dụng vòng tay để khóa tủ.</li>
                           <li><strong className="text-red-600">Lưu ý quan trọng:</strong> Nhắc nhở khách "Vui lòng không mang điện thoại/máy quay vào khu vực Onsen".</li>
-                          <li>Mời khách di chuyển vào khu vực Locker Nam/Nữ riêng biệt.</li>
+                          <li>Mời khách di chuyển vào khu vực Tủ đồ Nam/Nữ riêng biệt.</li>
                         </ul>
                       </div>
                     </div>
                   </section>
 
                   <section>
-                    <h3 className="text-xl font-bold text-emerald-700 mb-3">3.2. Quy trình tại khu vực Locker</h3>
-                      <p className="text-sm text-stone-500 italic mb-2"><strong>Mục đích:</strong> Quản lý tư trang khách hàng an toàn và vệ sinh.</p>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-3">4.2. Quy trình tại khu vực Tủ đồ (Tủ đồ thông minh)</h3>
+                     <p className="text-sm text-stone-500 italic mb-2"><strong>Mục đích:</strong> Quản lý tư trang khách hàng an toàn và vệ sinh.</p>
                     
                     <div className="space-y-4">
                       {/* Tiếp nhận & Lưu trữ */}
@@ -438,7 +457,7 @@
                         <ul className="space-y-3 text-sm">
                           <li className="flex gap-2">
                             <div className="font-bold min-w-[120px] text-emerald-800">1. Tiếp nhận:</div>
-                            <div>Nhân viên tại quầy Locker hướng dẫn khách quét vòng tay vào đúng số tủ để lấy quần áo và bộ khăn tắm (1 lớn, 1 nhỏ).</div>
+                            <div>Nhân viên tại quầy Tủ đồ hướng dẫn khách quét vòng tay vào đúng số tủ để lấy quần áo và bộ khăn tắm (1 lớn, 1 nhỏ).</div>
                           </li>
                           <li className="flex gap-2">
                             <div className="font-bold min-w-[120px] text-emerald-800">2. Lưu trữ:</div>
@@ -460,15 +479,15 @@
                           <div className="flex-1 bg-white p-2 rounded text-center border border-emerald-200 text-xs font-bold text-emerald-700 flex items-center justify-center">2. Onsen</div>
                           <div className="hidden md:flex items-center text-emerald-400"><ArrowRight size={16}/></div>
                           
-                          {/* Combined 3 & 4 with flexibility */}
-                          <div className="flex-[2] flex flex-col justify-center gap-1 bg-white p-2 rounded border border-emerald-200 border-dashed relative group">
-                              <div className="flex items-center justify-center gap-2">
-                                  <span className="font-bold text-emerald-700">3. Spa Trị liệu</span>
-                                  <ArrowLeftRight size={16} className="text-emerald-400" />
-                                  <span className="font-bold text-emerald-700">4. Ăn uống</span>
+                          {/* Steps 3 & 4 Interchangeable */}
+                          <div className="flex-[2] bg-white p-2 rounded border border-emerald-200 border-dashed flex flex-col justify-center items-center relative group">
+                              <div className="flex items-center gap-3 mb-1">
+                                <span className="text-xs font-bold text-emerald-700">3. Spa Trị liệu</span>
+                                <ArrowLeftRight size={16} className="text-emerald-500"/>
+                                <span className="text-xs font-bold text-emerald-700">4. Ăn uống</span>
                               </div>
-                              <div className="text-[10px] text-center text-stone-500 font-medium leading-tight">
-                                  (Có thể tùy chọn thứ tự)
+                              <div className="text-[10px] text-stone-500 italic bg-stone-50 px-2 py-0.5 rounded-full border border-stone-100">
+                                (Có thể tùy chọn thứ tự)
                               </div>
                           </div>
                         </div>
@@ -480,7 +499,7 @@
                             "Để đạt hiệu quả sức khỏe tốt nhất, anh/chị nên trải nghiệm <strong>Jjimjilbang trước</strong> để thải độc qua mồ hôi tại 7 phòng xông. Sau đó mới xuống tắm Onsen để làm sạch và thư giãn. Cuối cùng là Spa trị liệu."
                           </p>
                           <p className="mt-2 text-xs italic text-red-600">
-                            *Lưu ý: Không nên tắm lại sau khi Spa trị liệu vì sẽ làm mất tác dụng của dầu massage và ảnh hưởng sức khỏe. Nếu tắm Onsen trước rồi mới qua Jjimjilbang thì hiệu quả thải độc sẽ giảm.
+                            *Lưu ý: Không nên tắm lại sau khi Spa trị liệu vì sẽ làm mất tác dụng của dầu mát-xa và ảnh hưởng sức khỏe. Nếu tắm Onsen trước rồi mới qua Jjimjilbang thì hiệu quả thải độc sẽ giảm.
                           </p>
                         </div>
                       </div>
@@ -488,18 +507,18 @@
                   </section>
 
                   <section>
-                    <h3 className="text-xl font-bold text-emerald-700 mb-3">3.3. Quy trình Check-out và Thanh toán</h3>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-3">4.3. Quy trình Thanh toán và Ra về</h3>
                       <ol className="list-decimal pl-5 space-y-3 bg-white p-4 rounded shadow-sm text-sm">
-                      <li><strong>Trả đồ:</strong> Khách trả đồng phục và khăn bẩn vào giỏ quy định tại quầy Locker.</li>
-                      <li><strong>Kiểm tra vòng tay:</strong> Khách ra quầy Lễ tân, trả vòng tay RFID.</li>
+                      <li><strong>Trả đồ:</strong> Khách trả đồng phục và khăn bẩn vào giỏ quy định tại quầy Tủ đồ.</li>
+                      <li><strong>Kiểm tra vòng tay:</strong> Khách ra quầy CSKH, trả vòng tay chip.</li>
                       <li>
-                        <strong>Truy xuất dữ liệu:</strong> Lễ tân quét vòng tay kiểm tra dịch vụ phát sinh.
+                        <strong>Truy xuất dữ liệu:</strong> CSKH Trực tiếp quét vòng tay kiểm tra dịch vụ phát sinh.
                         <ul className="list-disc pl-4 mt-1 text-stone-600">
-                          <li><em>Nếu có phát sinh:</em> In hóa đơn tạm tính, mời khách kiểm tra.</li>
+                          <li><em>Nếu có phát sinh:</em> Hướng dẫn khách sang quầy Thu ngân để thanh toán khoản phát sinh.</li>
                           <li><em>Nếu không có:</em> Cảm ơn khách hàng.</li>
                         </ul>
                       </li>
-                      <li><strong>Thanh toán:</strong> Thu tiền phát sinh (Tiền mặt/Thẻ/QR). Hệ thống mở khóa tủ giày (hoặc Lễ tân xác nhận) để khách lấy giày.</li>
+                      <li><strong>Thanh toán:</strong> Khách thanh toán tại Thu ngân (nếu có). Hệ thống mở khóa tủ giày (hoặc CSKH xác nhận) để khách lấy giày.</li>
                       <li><strong>Tiễn khách:</strong> Cúi chào, cảm ơn và hẹn gặp lại.</li>
                     </ol>
                   </section>
@@ -507,668 +526,828 @@
               )
             },
             {
-              id: 4,
-              title: "Quy định Nhân sự (Kỹ thuật viên Spa)",
+              id: 5,
+              title: "Quy định Nhân sự (CSKH Trực tiếp)",
               icon: <UserCheck size={20} />,
               content: (
                 <div className="space-y-6 text-stone-800">
+                  <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mb-4">
+                      <h3 className="font-bold text-emerald-800 text-lg mb-2 flex items-center gap-2"><Info size={20}/> Phạm vi áp dụng</h3>
+                      <p className="text-sm text-emerald-900">Quy định này áp dụng riêng cho nhân viên thuộc bộ phận <strong>CSKH Trực tiếp (Offline Customer Service)</strong> - Những "đại sứ hình ảnh" đầu tiên tiếp xúc với khách hàng.</p>
+                  </div>
+
                   <section>
-                    <h3 className="text-xl font-bold text-emerald-700 mb-3">4.1. Quy định về Ca làm việc (KTV)</h3>
-                    <p className="mb-3 text-sm">Do đặc thù Spa cần phục vụ theo lịch hẹn của khách, nhân sự Kỹ thuật viên (KTV) cần tuân thủ nghiêm ngặt về giờ giấc và trạng thái sẵn sàng (Trực/Standby):</p>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-3">5.1. Thời gian làm việc & Ca kíp</h3>
                     <div className="overflow-x-auto">
                       <table className="min-w-full bg-white border border-stone-200 rounded-lg text-sm shadow-sm">
-                        <thead className="bg-purple-100 text-purple-900">
+                        <thead className="bg-emerald-100 text-emerald-900">
                           <tr>
-                            <th className="p-3 text-left border-b w-1/4">Ca làm việc</th>
+                            <th className="p-3 text-left border-b w-1/4">Tên Ca</th>
                             <th className="p-3 text-left border-b w-1/4">Khung giờ</th>
-                            <th className="p-3 text-left border-b">Yêu cầu đặc biệt</th>
+                            <th className="p-3 text-left border-b">Ghi chú & Nghỉ ngơi</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
                           <tr>
-                            <td className="p-3 font-bold text-purple-800">Ca Sáng (A)</td>
-                            <td className="p-3 font-medium">
-                                09:00 – 18:00<br/>
-                                <span className="text-[10px] text-stone-500 font-normal">(Nghỉ trưa 1 tiếng)</span>
-                            </td>
+                            <td className="p-3 font-bold text-emerald-800">Ca 1 (Sáng - Chiều)</td>
+                            <td className="p-3 font-medium">08:30 – 18:30</td>
                             <td className="p-3 text-xs text-stone-600">
-                                Chuẩn bị phòng đầu ngày (Đốt tinh dầu, kiểm tra khăn, nhiệt độ phòng). Sẵn sàng đón khách sớm.
+                              <span className="font-bold text-emerald-700 block mb-1">Nghỉ: 30 phút</span>
+                              <ul className="list-disc pl-4">
+                                <li>Phụ trách quy trình <strong>Mở ca</strong>.</li>
+                                <li>Bàn giao công việc lúc 18:30 cho Ca 2.</li>
+                              </ul>
+                            </td>
+                          </tr>
+                          <tr className="bg-stone-50">
+                            <td className="p-3 font-bold text-blue-800">Ca 2 (Trưa - Tối)</td>
+                            <td className="p-3 font-medium">11:00 – 21:00</td>
+                            <td className="p-3 text-xs text-stone-600">
+                               <span className="font-bold text-blue-700 block mb-1">Nghỉ: 30 phút</span>
+                               <ul className="list-disc pl-4">
+                                <li>Phụ trách quy trình <strong>Đóng ca</strong> & Chốt sổ cuối ngày.</li>
+                              </ul>
                             </td>
                           </tr>
                           <tr>
-                            <td className="p-3 font-bold text-purple-800">Ca Chiều (B)</td>
-                            <td className="p-3 font-medium">
-                                13:00 – 22:00<br/>
-                                <span className="text-[10px] text-stone-500 font-normal">(Nghỉ chiều 1 tiếng)</span>
-                            </td>
+                            <td className="p-3 font-bold text-purple-800">Ca Full (Toàn thời gian)</td>
+                            <td className="p-3 font-medium">08:30 – 21:00</td>
                             <td className="p-3 text-xs text-stone-600">
-                                Vệ sinh, thu dọn toàn bộ khu vực Spa cuối ngày. Đảm bảo tắt hết thiết bị điện (máy xông, đèn, máy lạnh).
-                            </td>
-                          </tr>
-                           <tr>
-                            <td className="p-3 font-bold text-purple-800">Ca Gãy (C)</td>
-                            <td className="p-3 font-medium">
-                                10:00 – 14:00<br/>
-                                17:00 – 21:00
-                            </td>
-                            <td className="p-3 text-xs text-stone-600">
-                                Tăng cường vào giờ cao điểm. Linh động theo lượng khách đặt trước.
+                              <span className="font-bold text-purple-700 block mb-1">Nghỉ: 60 phút (1 tiếng)</span>
+                              Áp dụng cho quản lý hoặc tăng cường cuối tuần. Có thể chia thời gian nghỉ thành 2 lần (30p/lần).
                             </td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-                      <p className="mt-2 text-sm text-red-600 italic border-l-2 border-red-500 pl-2 bg-red-50 py-1">
-                      * Quy tắc Trực (Standby): KTV chưa có tour phải ngồi tại phòng chờ nhân viên, không tụ tập tại quầy lễ tân gây ồn ào.
-                    </p>
+                    <div className="mt-3 flex gap-3 text-xs text-stone-600 bg-white p-3 rounded border border-stone-200">
+                       <div><strong>Quy định giao ca:</strong></div>
+                       <ul className="list-disc pl-4 space-y-1">
+                          <li>Có mặt trước giờ làm việc <strong>15 phút</strong> để thay đồng phục và trang điểm.</li>
+                          <li>Nhân viên Ca 2 đến lúc 11:00 sẽ hỗ trợ Ca 1 nghỉ trưa luân phiên.</li>
+                       </ul>
+                    </div>
                   </section>
 
                   <section>
-                    <h3 className="text-xl font-bold text-emerald-700 mb-3">4.2. Tiêu chuẩn Diện mạo & Vệ sinh</h3>
-                    <p className="mb-3 text-sm italic">KTV Spa tiếp xúc trực tiếp lên cơ thể khách hàng, do đó tiêu chuẩn vệ sinh cá nhân là quan trọng nhất.</p>
-                    
-                    <div className="bg-white rounded-lg border border-stone-200 overflow-hidden shadow-sm flex flex-col md:flex-row">
-                      <div className="md:w-1/3 h-64 bg-stone-100 flex items-center justify-center overflow-hidden border-r border-stone-200">
-                         {/* Placeholder Image */}
-                         <div className="text-stone-400 flex flex-col items-center"><UserCheck size={48} /><span>Hình minh họa</span></div>
-                      </div>
-                      <div className="p-6 flex-1">
-                        <h4 className="font-bold text-purple-800 text-lg mb-3">Kỹ thuật viên Spa & Trị liệu</h4>
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div>
-                            <strong className="text-sm text-stone-800 block mb-1">Trang phục:</strong>
-                            <ul className="text-xs list-disc pl-4 space-y-1 text-stone-600">
-                              <li><strong>Đồng phục:</strong> Bộ quần áo Spa do Carezone cấp phát, sạch sẽ, phẳng phiu.</li>
-                              <li><strong>Tóc:</strong> Búi cao gọn gàng, sử dụng lưới búi tóc. Không để tóc lòa xòa chạm vào mặt khách.</li>
-                              <li><strong>Trang điểm:</strong> Nhẹ nhàng, tươi tắn. Không dùng nước hoa mùi quá nồng.</li>
-                            </ul>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-3">5.2. Tiêu chuẩn Diện mạo</h3>
+                    <div className="flex flex-col md:flex-row gap-6">
+                       {/* Hình ảnh minh họa */}
+                       <div className="w-full md:w-1/3">
+                          <div className="bg-white p-2 rounded-lg border border-stone-200 shadow-sm h-full">
+                             <div className="aspect-[3/4] bg-stone-100 rounded mb-2 overflow-hidden relative">
+                                {/* Placeholder Image */}
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-stone-400">
+                                   <UserCheck size={64} />
+                                   <span className="text-sm mt-2">Hình minh họa Đồng phục</span>
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 bg-emerald-900/80 text-white text-xs p-2 text-center">
+                                   Chuẩn CSKH Trực tiếp Carezone
+                                </div>
+                             </div>
                           </div>
-                          <div>
-                            <strong className="text-sm text-stone-800 block mb-1">Đôi bàn tay (Công cụ lao động):</strong>
-                            <ul className="text-xs list-disc pl-4 space-y-1 text-stone-600">
-                              <li><strong>Móng tay:</strong> Cắt ngắn sát phần thịt, dũa tròn, sạch sẽ. Tuyệt đối không để móng dài/đính đá.</li>
-                              <li><strong>Da tay:</strong> Mềm mại, không bị chai sần (thường xuyên dưỡng da tay).</li>
-                              <li><strong>Nhiệt độ:</strong> Luôn làm ấm tay trước khi chạm vào người khách.</li>
-                            </ul>
+                       </div>
+
+                       {/* Chi tiết quy định */}
+                       <div className="w-full md:w-2/3 space-y-4">
+                          <div className="bg-white p-4 rounded border-l-4 border-emerald-500 shadow-sm">
+                             <h4 className="font-bold text-emerald-800 text-sm mb-2">1. Trang phục & Giày</h4>
+                             <ul className="text-sm text-stone-700 list-disc pl-5 space-y-1">
+                                <li><strong>Áo dài:</strong> Đồng phục áo dài cách tân màu xanh cốm (hoặc theo bộ sưu tập mùa). Phải được ủi phẳng, không nhăn, không sứt chỉ.</li>
+                                <li><strong>Thẻ tên:</strong> Đeo ngay ngắn bên ngực trái.</li>
+                                <li><strong>Giày:</strong> Giày búp bê hoặc cao gót (3-5cm) bít mũi, màu đen hoặc da. Tuyệt đối không mang dép lê, giày hở gót.</li>
+                             </ul>
                           </div>
-                          <div className="sm:col-span-2">
-                            <strong className="text-sm text-stone-800 block mb-1">Sức khỏe:</strong>
-                            <ul className="text-xs list-disc pl-4 space-y-1 text-stone-600">
-                               <li>KTV đang bị ho, cảm cúm, bệnh ngoài da bắt buộc phải báo quản lý xin nghỉ để tránh lây nhiễm cho khách.</li>
-                               <li>Hơi thở thơm tho.</li>
-                            </ul>
+
+                          <div className="bg-white p-4 rounded border-l-4 border-emerald-500 shadow-sm">
+                             <h4 className="font-bold text-emerald-800 text-sm mb-2">2. Trang điểm & Tóc (Nữ)</h4>
+                             <ul className="text-sm text-stone-700 list-disc pl-5 space-y-1">
+                                <li><strong>Tóc:</strong> Búi cao gọn gàng, dùng kẹp lưới theo quy định. Không để tóc mái che mắt. Màu tóc nhuộm trầm (nâu hạt dẻ, nâu đen), không nhuộm màu sáng/nổi bật.</li>
+                                <li><strong>Trang điểm:</strong> Bắt buộc trang điểm nhẹ nhàng khi vào ca. Son môi màu tươi tắn (Cam đất, Đỏ cam, Hồng). Kẻ chân mày gọn gàng.</li>
+                                <li><strong>Móng tay:</strong> Cắt ngắn sạch sẽ hoặc sơn màu da/màu nhẹ. Không đính đá cầu kỳ.</li>
+                             </ul>
                           </div>
-                        </div>
-                      </div>
+
+                          <div className="bg-white p-4 rounded border-l-4 border-emerald-500 shadow-sm">
+                             <h4 className="font-bold text-emerald-800 text-sm mb-2">3. Vệ sinh cá nhân</h4>
+                             <ul className="text-sm text-stone-700 list-disc pl-5 space-y-1">
+                                <li>Hơi thở thơm tho (Dùng xịt thơm miệng sau khi ăn).</li>
+                                <li>Không dùng nước hoa mùi quá nồng gắt.</li>
+                                <li>Không đeo quá nhiều trang sức (tối đa 1 nhẫn, 1 dây chuyền mảnh).</li>
+                             </ul>
+                          </div>
+                       </div>
                     </div>
                   </section>
 
                    <section>
-                    <h3 className="text-xl font-bold text-emerald-700 mb-3">4.3. Thái độ ứng xử & Kỹ năng mềm</h3>
-                    <div className="space-y-3">
-                      <div className="flex gap-3 bg-white p-3 rounded border border-stone-200">
-                        <div className="bg-purple-100 p-2 rounded h-fit text-purple-700"><Volume2 size={18}/></div>
-                        <div>
-                          <h4 className="font-bold text-sm">Giọng nói chuẩn Spa</h4>
-                          <p className="text-xs text-stone-600">
-                            - Luôn duy trì âm lượng nhỏ, trầm ấm, tốc độ nói chậm rãi.<br/>
-                            - Tuyệt đối không nói chuyện riêng, cười đùa với KTV khác khi đang trong phòng trị liệu.<br/>
-                            - Chỉ giao tiếp với khách khi cần thiết (hỏi lực massage, nhiệt độ phòng) để khách được nghỉ ngơi.
-                          </p>
-                        </div>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-3">5.3. Tác phong & Nghiệp vụ tại quầy</h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      
+                      <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                         <h4 className="font-bold text-emerald-800 flex items-center gap-2 mb-2"><UserCheck size={18}/> Tư thế làm việc</h4>
+                         <ul className="list-disc pl-5 text-sm text-stone-700 space-y-2">
+                            <li><strong>Đứng dậy chào khách:</strong> Khi khách bước vào phạm vi <strong>2 mét</strong> hoặc tiến lại gần quầy, nhân viên BẮT BUỘC phải đứng dậy, mỉm cười và cúi chào.</li>
+                            <li><strong>Tư thế đứng:</strong> Thẳng lưng, hai tay đan nhẹ phía trước bụng hoặc để trên mặt quầy một cách tự nhiên. Không khoanh tay trước ngực, không chống cằm, không dựa ngả nghiêng vào quầy/tường.</li>
+                         </ul>
                       </div>
-                      <div className="flex gap-3 bg-white p-3 rounded border border-stone-200">
-                         <div className="bg-purple-100 p-2 rounded h-fit text-purple-700"><CameraOff size={18}/></div>
-                         <div>
-                          <h4 className="font-bold text-sm">Tôn trọng sự riêng tư</h4>
-                          <p className="text-xs text-stone-600">
-                            - Luôn gõ cửa trước khi vào phòng (kể cả khi cửa mở).<br/>
-                            - Ra ngoài khi khách thay đồ. Dùng khăn che chắn cẩn thận các bộ phận nhạy cảm khi massage (Khăn che mắt, khăn che người).
-                          </p>
-                        </div>
+
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                         <h4 className="font-bold text-blue-800 flex items-center gap-2 mb-2"><MessageSquare size={18}/> Tiêu chuẩn Giao tiếp Trực tiếp</h4>
+                         <ul className="list-disc pl-5 text-sm text-stone-700 space-y-2">
+                            <li><strong>Giao tiếp mắt (Eye Contact):</strong> Nhìn thẳng vào mắt khách khi nói chuyện với ánh nhìn thân thiện.</li>
+                            <li><strong>Bàn tay mở:</strong> Khi hướng dẫn khách đi hướng nào, dùng cả bàn tay mở, ngón tay khép lại (không dùng 1 ngón tay chỉ trỏ).</li>
+                            <li><strong>Lắng nghe chủ động:</strong> Gật đầu nhẹ khi nghe khách nói, xác nhận lại thông tin để đảm bảo hiểu đúng ý khách.</li>
+                         </ul>
                       </div>
+
                     </div>
                   </section>
-                </div>
-              )
-            },
-            {
-              id: 5,
-              title: "Quy trình Vận hành & Kiểm soát Spa",
-              icon: <Sparkles size={20} />,
-              content: (
-                <div className="space-y-6 text-stone-800">
-                  <section className="mb-6">
-                     <h3 className="text-xl font-bold text-emerald-700 mb-3">5.1. Chuẩn bị trước khi khách đến</h3>
-                     <ul className="list-disc pl-5 space-y-2 text-sm text-stone-700 bg-white p-4 rounded shadow-sm border border-stone-100">
-                        <li><strong>Vệ sinh phòng:</strong> Đảm bảo phòng sạch sẽ, thoáng mát. Thay ga trải giường, vỏ gối mới.</li>
-                        <li><strong>Sắp xếp không gian:</strong> Điều chỉnh ánh sáng dịu nhẹ, bật nhạc thiền/spa âm lượng vừa phải, đốt tinh dầu hương liệu nhẹ nhàng.</li>
-                        <li><strong>Chuẩn bị dụng cụ:</strong> Chuẩn bị sẵn khăn, dầu massage, đá nóng (nếu có).</li>
-                        <li><strong>Nhiệt độ phòng:</strong> Duy trì ở mức 25-26°C.</li>
-                     </ul>
-                  </section>
 
-                  <section className="mb-6">
-                     <h3 className="text-xl font-bold text-emerald-700 mb-3">5.2. Đón tiếp & Xác nhận dịch vụ</h3>
-                     <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 space-y-3">
-                        <div className="flex gap-3 items-start">
-                           <div className="font-bold text-emerald-800 min-w-[20px]">1.</div>
-                           <div className="text-sm"><strong>Chào đón:</strong> Mỉm cười, cúi chào khách tại khu vực chờ của spa.</div>
-                        </div>
-                        <div className="flex gap-3 items-start">
-                           <div className="font-bold text-emerald-800 min-w-[20px]">2.</div>
-                           <div className="text-sm">
-                              <strong>Kiểm tra thông tin:</strong>
-                              <ul className="list-disc pl-4 mt-1 text-stone-600 text-xs space-y-1">
-                                 <li>Quét vòng tay RFID của khách để xác nhận gói dịch vụ đã mua.</li>
-                                 <li><em>Trường hợp khách chưa mua gói:</em> Tư vấn menu spa và thực hiện thao tác <strong>bán thêm (upsell)</strong> trực tiếp vào vòng tay trên máy POS.</li>
-                              </ul>
-                           </div>
-                        </div>
-                        <div className="flex gap-3 items-start">
-                           <div className="font-bold text-emerald-800 min-w-[20px]">3.</div>
-                           <div className="text-sm"><strong>Tư vấn sức khỏe:</strong> Hỏi thăm tình trạng sức khỏe, các vùng đau mỏi cần tập trung hoặc các lưu ý đặc biệt (chấn thương, dị ứng...).</div>
-                        </div>
-                     </div>
-                  </section>
-
-                  <section className="mb-6">
-                     <h3 className="text-xl font-bold text-emerald-700 mb-3">5.3. Quy trình Trị liệu</h3>
-                     <div className="space-y-4">
-                        <div className="border-l-4 border-emerald-500 pl-4 py-2 bg-white shadow-sm rounded-r">
-                           <h4 className="font-bold text-emerald-800 text-sm mb-1">Bước 1: Mời khách vào phòng</h4>
-                           <p className="text-xs text-stone-600">Hướng dẫn khách thay đồ (nếu cần), cất tư trang và nằm lên giường trị liệu đúng tư thế.</p>
-                        </div>
-                        <div className="border-l-4 border-emerald-500 pl-4 py-2 bg-white shadow-sm rounded-r">
-                           <h4 className="font-bold text-emerald-800 text-sm mb-1">Bước 2: Thực hiện Massage</h4>
-                           <ul className="list-disc pl-4 text-xs text-stone-600">
-                              <li>Tiến hành bài trị liệu theo đúng quy trình kỹ thuật đã được đào tạo.</li>
-                              <li>Thường xuyên hỏi thăm khách về lực đạo: <em>"Lực em đi như vậy có vừa không ạ?"</em>.</li>
-                              <li>Giữ im lặng trong quá trình làm, chỉ giao tiếp khi cần thiết.</li>
+                  <section>
+                     <h3 className="text-xl font-bold text-emerald-700 mb-3">5.4. Các hành vi CẤM KỴ tại quầy CSKH</h3>
+                     <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow-sm">
+                        <h4 className="font-bold text-red-800 flex items-center gap-2 mb-3">
+                          <AlertTriangle size={20}/> Tuyệt đối không vi phạm:
+                        </h4>
+                        <div className="grid md:grid-cols-2 gap-x-8 gap-y-2">
+                           <ul className="list-disc pl-5 text-sm text-red-900 space-y-2">
+                             <li><strong>Sử dụng điện thoại riêng:</strong> Lướt web, facebook, nhắn tin cá nhân trước mặt khách hàng.</li>
+                             <li><strong>Ăn uống tại quầy:</strong> Ăn vặt, nhai kẹo cao su, uống trà sữa (ly nhựa để trên mặt quầy) trong giờ làm việc.</li>
+                             <li><strong>Tụ tập tán gẫu:</strong> Nói chuyện riêng, cười đùa lớn tiếng hoặc bàn tán về khách hàng/đồng nghiệp.</li>
+                           </ul>
+                           <ul className="list-disc pl-5 text-sm text-red-900 space-y-2">
+                             <li><strong>Thái độ thờ ơ:</strong> Ngồi im không ngẩng đầu lên khi khách đi qua hoặc đến quầy.</li>
+                             <li><strong>Tư thế xấu:</strong> Gác chân, ngồi xổm, nằm gục xuống bàn.</li>
+                             <li><strong>Bỏ vị trí:</strong> Quầy CSKH không có người trực (trừ trường hợp khẩn cấp đã nhờ người khác trực thay).</li>
                            </ul>
                         </div>
                      </div>
                   </section>
 
-                  <section className="mb-6">
-                     <h3 className="text-xl font-bold text-emerald-700 mb-3">5.4. Kết thúc & Chăm sóc sau trị liệu</h3>
-                     <ol className="list-decimal pl-5 space-y-3 bg-white p-4 rounded shadow-sm text-sm border border-stone-200">
-                        <li><strong>Kết thúc bài:</strong> Thông báo nhẹ nhàng cho khách biết liệu trình đã kết thúc. Lau sạch dầu thừa trên cơ thể khách bằng khăn ấm.</li>
-                        <li><strong>Mời trà & Đánh giá:</strong> Đỡ khách ngồi dậy, mời khách uống trà ấm/ăn nhẹ (nếu có). Cảm ơn khách và khéo léo nhờ khách đánh giá chất lượng dịch vụ (qua phiếu hoặc máy tính bảng).</li>
-                        <li><strong>Hướng dẫn di chuyển:</strong> Hỗ trợ cung cấp thông tin để khách di chuyển sang khu vực trải nghiệm tiếp theo (ví dụ: Nhà hàng, Khu nghỉ ngơi, hoặc ra về).</li>
-                        <li><strong>Tiễn khách:</strong> Cúi chào tạm biệt khách tại cửa Spa.</li>
-                        <li><strong>Vệ sinh phòng:</strong> Thu dọn khăn, ga gối bẩn, vệ sinh phòng để sẵn sàng đón khách tiếp theo.</li>
-                     </ol>
+                  <section>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-3">5.5. Danh mục Công việc Hàng ngày (Checklist Tổng hợp)</h3>
+                    <p className="text-sm text-stone-600 mb-3 italic">Bảng tổng hợp toàn bộ quy trình làm việc trong một ca trực (Đầu ca - Trong ca - Cuối ca).</p>
+                    
+                    <div className="overflow-x-auto bg-white rounded-lg border border-stone-200 shadow-sm">
+                      <table className="min-w-full text-sm text-left border-collapse">
+                        <thead className="bg-emerald-900 text-white font-bold">
+                          <tr>
+                            <th className="p-3 border border-emerald-800 w-[15%]">Giai đoạn</th>
+                            <th className="p-3 border border-emerald-800 w-[20%]">Hạng mục</th>
+                            <th className="p-3 border border-emerald-800 w-[50%]">Chi tiết công việc</th>
+                            <th className="p-3 border border-emerald-800 w-[15%] text-center">Tự kiểm tra</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-200">
+                          {/* GIAI DOAN 1: DAU CA */}
+                          <tr className="bg-emerald-50">
+                            <td rowSpan="4" className="p-3 border border-emerald-100 font-bold text-emerald-800 align-top">
+                                <div className="sticky top-0">
+                                    1. ĐẦU CA<br/>
+                                    <span className="text-[10px] font-normal text-emerald-600">(30p đầu giờ)</span>
+                                </div>
+                            </td>
+                            <td className="p-3 border border-emerald-100 font-medium text-emerald-900">Diện mạo & Tác phong</td>
+                            <td className="p-3 border border-emerald-100 text-stone-700">Trang phục ủi phẳng, trang điểm nhẹ, búi tóc gọn. Đeo thẻ tên, nhận bộ đàm/tai nghe.</td>
+                            <td className="p-3 border border-emerald-100 text-center"><input type="checkbox" className="accent-emerald-600 w-4 h-4"/></td>
+                          </tr>
+                          <tr className="bg-emerald-50">
+                            <td className="p-3 border border-emerald-100 font-medium text-emerald-900">Vệ sinh & Không gian</td>
+                            <td className="p-3 border border-emerald-100 text-stone-700">Lau bụi quầy lễ tân, máy tính. Kiểm tra sảnh chờ (ghế, sàn). Bật nhạc, máy lạnh (25°C), xông tinh dầu.</td>
+                            <td className="p-3 border border-emerald-100 text-center"><input type="checkbox" className="accent-emerald-600 w-4 h-4"/></td>
+                          </tr>
+                          <tr className="bg-emerald-50">
+                             <td className="p-3 border border-emerald-100 font-medium text-emerald-900">Công cụ dụng cụ</td>
+                             <td className="p-3 border border-emerald-100 text-stone-700">Khởi động POS, Tablet. Đếm đủ số lượng Vòng tay chip, Thẻ locker tại quầy.</td>
+                             <td className="p-3 border border-emerald-100 text-center"><input type="checkbox" className="accent-emerald-600 w-4 h-4"/></td>
+                          </tr>
+                          <tr className="bg-emerald-50">
+                             <td className="p-3 border border-emerald-100 font-medium text-emerald-900">Thông tin</td>
+                             <td className="p-3 border border-emerald-100 text-stone-700">Xem lịch Booking, ghi chú khách VIP. Đọc Sổ giao ca/Zalo để nắm sự cố tồn đọng.</td>
+                             <td className="p-3 border border-emerald-100 text-center"><input type="checkbox" className="accent-emerald-600 w-4 h-4"/></td>
+                          </tr>
+
+                          {/* GIAI DOAN 2: TRONG CA */}
+                          <tr className="bg-white">
+                            <td rowSpan="3" className="p-3 border border-stone-200 font-bold text-blue-800 align-top">
+                                <div className="sticky top-0">
+                                    2. TRONG CA<br/>
+                                    <span className="text-[10px] font-normal text-blue-600">(Thường xuyên)</span>
+                                </div>
+                            </td>
+                            <td className="p-3 border border-stone-200 font-medium text-blue-900">Đón tiếp & Tư vấn</td>
+                            <td className="p-3 border border-stone-200 text-stone-700">Đứng dậy chào khách (phạm vi 2m). Tư vấn Combo/Ưu đãi. Mời làm thẻ thành viên.</td>
+                            <td className="p-3 border border-stone-200 text-center text-xs text-stone-400 italic">Liên tục</td>
+                          </tr>
+                          <tr className="bg-white">
+                            <td className="p-3 border border-stone-200 font-medium text-blue-900">Duy trì tiêu chuẩn</td>
+                            <td className="p-3 border border-stone-200 text-stone-700">Kiểm tra vệ sinh sảnh mỗi 30 phút. Châm nước mời khách. Thu dọn ly bẩn ngay khi khách rời đi.</td>
+                            <td className="p-3 border border-stone-200 text-center text-xs text-stone-400 italic">30p/lần</td>
+                          </tr>
+                          <tr className="bg-white">
+                             <td className="p-3 border border-stone-200 font-medium text-blue-900">Điều phối</td>
+                             <td className="p-3 border border-stone-200 text-stone-700">Bộ đàm thông báo Locker/Kỹ thuật khi có khách vào hoặc sự cố.</td>
+                             <td className="p-3 border border-stone-200 text-center text-xs text-stone-400 italic">Khi phát sinh</td>
+                          </tr>
+
+                          {/* GIAI DOAN 3: CUOI CA */}
+                          <tr className="bg-orange-50">
+                            <td rowSpan="3" className="p-3 border border-orange-100 font-bold text-orange-800 align-top">
+                                <div className="sticky top-0">
+                                    3. CUỐI CA<br/>
+                                    <span className="text-[10px] font-normal text-orange-600">(Trước về 30p)</span>
+                                </div>
+                            </td>
+                            <td className="p-3 border border-orange-100 font-medium text-orange-900">Báo cáo Doanh số</td>
+                            <td className="p-3 border border-orange-100 text-stone-700">In báo cáo Doanh số bán hàng (Sales Report). Đối chiếu số đơn hàng đã tạo với hệ thống.</td>
+                            <td className="p-3 border border-orange-100 text-center"><input type="checkbox" className="accent-orange-600 w-4 h-4"/></td>
+                          </tr>
+                          <tr className="bg-orange-50">
+                            <td className="p-3 border border-orange-100 font-medium text-orange-900">Bàn giao Tài sản</td>
+                            <td className="p-3 border border-orange-100 text-stone-700">Đếm đủ Vòng tay chip, Thẻ locker, Bộ đàm. Ghi Logbook nếu thất lạc/hư hỏng.</td>
+                            <td className="p-3 border border-orange-100 text-center"><input type="checkbox" className="accent-orange-600 w-4 h-4"/></td>
+                          </tr>
+                          <tr className="bg-orange-50">
+                             <td className="p-3 border border-orange-100 font-medium text-orange-900">An toàn & Báo cáo</td>
+                             <td className="p-3 border border-orange-100 text-stone-700">Gửi báo cáo Zalo. Tắt máy tính, đèn, máy lạnh (Ca cuối). Khóa tủ quầy.</td>
+                             <td className="p-3 border border-orange-100 text-center"><input type="checkbox" className="accent-orange-600 w-4 h-4"/></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </section>
-
-                   {/* Phần Kiểm soát & Báo cáo (Gộp từ Chương 7 cũ) */}
-                   <section className="mb-6">
-                      <h3 className="text-xl font-bold text-emerald-700 mb-3">5.5. Báo cáo vấn đề cho Quản lý</h3>
-                      <div className="bg-white p-4 rounded border border-stone-200 shadow-sm">
-                         <div className="flex items-center gap-2 mb-3 font-bold text-stone-800">
-                            <MessageSquare size={20} /> Nội dung báo cáo hàng ngày
-                         </div>
-                         <ul className="list-disc pl-5 text-sm text-stone-700 space-y-2">
-                            <li><strong>Chất lượng KTV:</strong> Báo cáo các trường hợp KTV bị khách phàn nàn về thái độ hoặc lực tay không đạt yêu cầu.</li>
-                            <li><strong>Cơ sở vật chất:</strong> Ghi nhận tình trạng phòng trị liệu (mùi ẩm mốc, đèn hỏng, nhạc không phát) để bảo trì xử lý.</li>
-                            <li><strong>Vật tư tiêu hao:</strong> Báo cáo mức tiêu thụ dầu massage, khăn, đá nóng trong ngày và đề xuất nhập thêm nếu sắp hết.</li>
-                            <li><strong>Sự cố y tế:</strong> Báo cáo ngay các trường hợp khách bị dị ứng dầu, đau tăng nặng sau khi massage để có hướng xử lý kịp thời.</li>
-                         </ul>
-                      </div>
-                   </section>
-
-                   <section>
-                      <h3 className="text-xl font-bold text-emerald-700 mb-3">5.6. Danh sách kiểm tra KTV (Checklist)</h3>
-                      <p className="text-sm text-stone-500 italic mb-3">Kỹ thuật viên (KTV) phải hoàn thành việc chuẩn bị phòng trước khi đón khách.</p>
-                      
-                      <div className="overflow-x-auto bg-white rounded-lg border border-stone-200 shadow-sm">
-                         <table className="min-w-full text-xs md:text-sm">
-                            <thead className="bg-purple-100 text-purple-900 font-bold">
-                               <tr>
-                                  <th className="p-3 text-left border-b w-[25%]">Hạng mục</th>
-                                  <th className="p-3 text-left border-b w-[45%]">Chi tiết kiểm tra & Tiêu chuẩn</th>
-                                  <th className="p-3 text-center border-b w-[15%]">Ca 1<br/><span className="text-[10px] font-normal">(Đầu ca)</span></th>
-                                  <th className="p-3 text-center border-b w-[15%]">Ca 2<br/><span className="text-[10px] font-normal">(Giao ca)</span></th>
-                               </tr>
-                            </thead>
-                            <tbody className="divide-y divide-stone-100">
-                               {/* 1. Chuẩn bị Phòng Trị liệu */}
-                               <tr>
-                                  <td className="p-3 font-bold text-purple-800 align-top" rowSpan="3">1. Chuẩn bị Phòng Trị liệu</td>
-                                  <td className="p-3">
-                                     <ul className="list-disc pl-4 space-y-1">
-                                        <li><strong>Giường:</strong> Thay ga, vỏ gối mới, trải thẳng, không nhăn.</li>
-                                        <li><strong>Khăn:</strong> Gấp hình thiên nga/hoa sen, đặt ngay ngắn.</li>
-                                        <li><strong>Sàn nhà:</strong> Sạch sẽ, không tóc, không bụi.</li>
-                                     </ul>
-                                  </td>
-                                  <td className="p-3 text-center text-emerald-600"><CheckCircle size={16} className="inline"/></td>
-                                  <td className="p-3 text-center text-emerald-600"><CheckCircle size={16} className="inline"/></td>
-                               </tr>
-                               <tr>
-                                  <td className="p-3">
-                                     <strong>Không gian 5 giác quan:</strong><br/>
-                                     - Nhiệt độ: 25-26°C.<br/>
-                                     - Ánh sáng: Vàng ấm, dịu nhẹ.<br/>
-                                     - Mùi hương: Tinh dầu sả chanh/oải hương thoang thoảng.<br/>
-                                     - Âm nhạc: Nhạc thiền Spa âm lượng 20-30%.
-                                  </td>
-                                  <td className="p-3 text-center text-emerald-600">Kiểm tra</td>
-                                  <td className="p-3 text-center text-emerald-600">Kiểm tra</td>
-                               </tr>
-                               <tr>
-                                  <td className="p-3">
-                                     <strong>Khu vực chậu ngâm chân:</strong><br/>
-                                     - Chậu sạch, khô ráo.<br/>
-                                     - Chuẩn bị sẵn muối thảo dược/gừng/chanh.
-                                  </td>
-                                  <td className="p-3 text-center text-emerald-600"><CheckCircle size={16} className="inline"/></td>
-                                  <td className="p-3 text-center text-emerald-600"><CheckCircle size={16} className="inline"/></td>
-                               </tr>
-
-                               {/* 2. Vật tư & Dụng cụ */}
-                               <tr>
-                                  <td className="p-3 font-bold text-purple-800 align-top" rowSpan="2">2. Vật tư & Dụng cụ</td>
-                                  <td className="p-3">
-                                     <strong>Kiểm tra số lượng:</strong><br/>
-                                     - Dầu massage (Baby oil/Dầu dừa): Đầy bình.<br/>
-                                     - Đá nóng: Đủ bộ, nồi hấp đá hoạt động tốt.<br/>
-                                     - Quần lót giấy: Đủ cho khách trong ca.
-                                  </td>
-                                  <td className="p-3 text-center text-emerald-600">Bổ sung đầy đủ</td>
-                                  <td className="p-3 text-center text-emerald-600">Bổ sung đầy đủ</td>
-                               </tr>
-                               <tr>
-                                  <td className="p-3">
-                                     <strong>Trà & Mứt:</strong><br/>
-                                     - Bình trà ấm, đủ nước nóng.<br/>
-                                     - Hũ mứt gừng/hạt sen đầy đủ, sạch sẽ.
-                                  </td>
-                                  <td className="p-3 text-center text-emerald-600"><CheckCircle size={16} className="inline"/></td>
-                                  <td className="p-3 text-center text-emerald-600">Châm thêm nước</td>
-                               </tr>
-                            </tbody>
-                         </table>
-                      </div>
-                   </section>
                 </div>
               )
             },
             {
-              id: 6,
-              title: "Lương, Phúc lợi & Lộ trình Thăng tiến",
+              id: 14,
+              title: "Công thức Lương & Phúc lợi (CSKH Trực tiếp)",
               icon: <Wallet size={20} />,
               content: (
-                <div className="space-y-6 text-stone-800">
-                  <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mb-4">
-                      <h3 className="font-bold text-emerald-800 text-lg mb-2 flex items-center gap-2"><Info size={20}/> Chính sách thu nhập & Phát triển</h3>
-                      <p className="text-sm text-emerald-900">Carezone xây dựng lộ trình phát triển sự nghiệp rõ ràng cho KTV Spa, đi kèm với cơ chế lương minh bạch: <strong>Lương Cứng + Tiền Tour + Tip</strong>.</p>
+                <div className="space-y-8 text-stone-800">
+                   {/* Header */}
+                   <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                     <h3 className="font-bold text-emerald-800 text-lg mb-2 flex items-center gap-2"><Calculator size={20}/> Cách tính Thu nhập</h3>
+                     <p className="text-sm text-emerald-900">Tại Carezone, thu nhập của bạn không giới hạn. Hãy nắm rõ công thức dưới đây để chủ động gia tăng thu nhập mỗi tháng.</p>
                   </div>
 
+                  {/* THE FORMULA */}
                   <section>
-                    <h3 className="text-xl font-bold text-emerald-700 mb-4">6.1. Cấu trúc Thu nhập Hàng tháng</h3>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-4">14.1. Cấu trúc Thu nhập Hàng tháng</h3>
                     
-                    {/* 2 Pillars Structure */}
-                    <div className="grid md:grid-cols-2 gap-4 mb-4">
-                        {/* Box 1: Cố định */}
-                        <div className="bg-white rounded-xl border border-stone-200 p-5 flex flex-col relative overflow-hidden shadow-sm">
-                            <div className="bg-stone-600 text-white text-[10px] font-bold px-3 py-1 rounded-full w-fit mx-auto mb-3">1. CỐ ĐỊNH</div>
-                            <div className="text-center mb-3">
-                                <Briefcase size={32} className="mx-auto text-stone-600 mb-2"/>
-                                <h4 className="font-bold text-stone-800 text-xl">Lương Cứng</h4>
-                            </div>
-                            <div className="space-y-3 text-sm text-stone-600 mb-4 flex-grow border-t border-stone-100 pt-3">
-                                <div className="flex justify-between">
-                                    <span>Lương Bậc:</span>
-                                    <span className="font-bold">Theo tay nghề</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span>Phụ cấp:</span>
-                                    <span className="font-bold">Cơm/Gửi xe</span>
-                                </div>
-                            </div>
-                            <div className="bg-stone-100 text-stone-600 text-center text-xs font-bold py-2 rounded">Ổn định</div>
+                    {/* FORMULA LAYOUT - UPDATED */}
+                    <div className="bg-white p-4 md:p-6 rounded-xl border border-stone-200 shadow-sm mb-6">
+                        <div className="flex flex-col md:flex-row items-stretch gap-4 justify-between relative">
+                           
+                           {/* Component 1: CỐ ĐỊNH */}
+                           <div className="flex-1 bg-stone-50 rounded-xl p-4 border-2 border-stone-100 flex flex-col relative group hover:border-stone-300 transition-all">
+                               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-stone-600 text-white text-[10px] px-3 py-1 rounded-full font-bold shadow-sm z-10">1. CỐ ĐỊNH</div>
+                               <div className="mt-2 text-center border-b border-stone-200 pb-2 mb-2">
+                                   <Briefcase size={24} className="mx-auto text-stone-400 mb-1"/>
+                                   <div className="text-lg font-bold text-stone-700">Lương Cứng</div>
+                               </div>
+                               <div className="space-y-2 text-xs text-stone-600 flex-1">
+                                   <div className="flex justify-between"><span>Lương CB:</span> <strong>Theo Bậc</strong></div>
+                                   <div className="flex justify-between"><span>Gửi xe:</span> <strong>0đ</strong></div>
+                               </div>
+                               <div className="mt-3 bg-stone-200 text-stone-600 text-center py-1 rounded font-bold text-xs">
+                                   Ổn định
+                               </div>
+                           </div>
+
+                           {/* Operator + */}
+                           <div className="flex items-center justify-center text-stone-300">
+                               <Plus size={24} strokeWidth={4} />
+                           </div>
+
+                           {/* Component 2: DOANH SỐ */}
+                           <div className="flex-1 bg-emerald-50 rounded-xl p-4 border-2 border-emerald-100 flex flex-col relative group hover:border-emerald-300 transition-all">
+                               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white text-[10px] px-3 py-1 rounded-full font-bold shadow-sm z-10">2. THƯỞNG TẬP THỂ</div>
+                               <div className="mt-2 text-center border-b border-emerald-200 pb-2 mb-2">
+                                   <TrendingUp size={24} className="mx-auto text-emerald-500 mb-1"/>
+                                   <div className="text-lg font-bold text-emerald-800">Thưởng Nhóm</div>
+                               </div>
+                               <div className="space-y-2 text-xs text-stone-600 flex-1">
+                                   <div className="flex justify-between"><span>Đạt 90%:</span> <strong>500k</strong></div>
+                                   <div className="flex justify-between"><span>Đạt 100%:</span> <strong>1.000k</strong></div>
+                                   <div className="flex justify-between"><span>120%:</span> <strong>1.500k+</strong></div>
+                               </div>
+                               <div className="mt-3 bg-emerald-200 text-emerald-800 text-center py-1 rounded font-bold text-xs">
+                                   Động lực
+                               </div>
+                           </div>
+
+                           {/* Operator + */}
+                           <div className="flex items-center justify-center text-stone-300">
+                               <Plus size={24} strokeWidth={4} />
+                           </div>
+
+                           {/* Component 3: HOA HỒNG */}
+                           <div className="flex-1 bg-orange-50 rounded-xl p-4 border-2 border-orange-100 flex flex-col relative group hover:border-orange-300 transition-all">
+                               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-orange-600 text-white text-[10px] px-3 py-1 rounded-full font-bold shadow-sm z-10">3. CÁ NHÂN</div>
+                               <div className="mt-2 text-center border-b border-orange-200 pb-2 mb-2">
+                                   <Award size={24} className="mx-auto text-orange-500 mb-1"/>
+                                   <div className="text-lg font-bold text-orange-800">Hoa hồng</div>
+                               </div>
+                               <div className="space-y-2 text-xs text-stone-600 flex-1 flex flex-col justify-center">
+                                   <div className="flex justify-between items-center border-b border-orange-200/50 pb-2 mb-2">
+                                       <span className="font-medium">Bán gói:</span> 
+                                       <strong className="text-orange-700 text-sm">2 - 6%</strong>
+                                   </div>
+                                   <div className="text-center text-stone-500 italic">
+                                       (Tùy theo từng loại dịch vụ)
+                                   </div>
+                               </div>
+                               <div className="mt-3 bg-orange-200 text-orange-800 text-center py-1 rounded font-bold text-xs">
+                                   Không giới hạn
+                               </div>
+                           </div>
                         </div>
 
-                        {/* Box 2: Cá nhân */}
-                        <div className="bg-orange-50 rounded-xl border border-orange-200 p-5 flex flex-col relative overflow-hidden shadow-sm">
-                            <div className="bg-orange-600 text-white text-[10px] font-bold px-3 py-1 rounded-full w-fit mx-auto mb-3">2. NĂNG SUẤT & TIP</div>
-                            <div className="text-center mb-3">
-                                <Award size={32} className="mx-auto text-orange-600 mb-2"/>
-                                <h4 className="font-bold text-orange-800 text-xl">Tour & Tip</h4>
-                            </div>
-                            <div className="space-y-3 text-sm text-stone-600 mb-4 flex-grow border-t border-orange-100 pt-3">
-                                 <div className="flex justify-between">
-                                    <span>Tiền Tour:</span>
-                                    <span className="font-bold">10% giá dịch vụ</span>
+                        {/* Equals */}
+                        <div className="mt-6 flex flex-col items-center justify-center gap-2">
+                            <ArrowDown size={24} className="text-stone-300 md:hidden" />
+                            <div className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 rounded-lg p-3 text-white flex items-center justify-between shadow-lg">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-white/20 p-2 rounded-full"><DollarSign size={20}/></div>
+                                    <div className="text-sm font-medium opacity-90">TỔNG THU NHẬP THỰC TẾ =</div>
                                 </div>
-                                <div className="flex justify-between">
-                                    <span>Tiền Tip:</span>
-                                    <span className="font-bold">100% KTV nhận</span>
-                                </div>
+                                <div className="text-xl font-bold tracking-wider">(1) + (2) + (3)</div>
                             </div>
-                            <div className="bg-orange-200 text-orange-800 text-center text-xs font-bold py-2 rounded">Không giới hạn</div>
                         </div>
                     </div>
 
-                    {/* Formula Bar */}
-                    <div className="bg-emerald-700 text-white p-3 rounded-lg shadow-md flex items-center justify-between mb-6">
-                        <div className="font-bold flex items-center gap-2 text-sm md:text-base">
-                            <Wallet size={20} className="text-emerald-300"/>
-                            TỔNG THU NHẬP THỰC TẾ =
-                        </div>
-                        <div className="font-bold text-lg md:text-xl tracking-widest">(1) + (2)</div>
+                    <div className="overflow-x-auto bg-white rounded-lg border border-stone-200 shadow-sm">
+                      <table className="min-w-full text-xs">
+                        <thead className="bg-emerald-50 text-emerald-900 font-bold">
+                          <tr>
+                            <th className="p-3 text-left border-b w-[30%]">Cấp bậc</th>
+                            <th className="p-3 text-center border-b w-[25%]">Lương Cứng<br/><span className="text-[9px] font-normal">(LCB + Phụ cấp)</span></th>
+                            <th className="p-3 text-left border-b w-[25%]">Mức Hoa hồng TB<br/><span className="text-[9px] font-normal">(Ước tính)</span></th>
+                            <th className="p-3 text-right border-b w-[20%] text-emerald-700">Tổng Thu Nhập<br/><span className="text-[9px] font-normal">(Thực nhận)</span></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                          {/* Probation */}
+                          <tr>
+                            <td className="p-3">
+                              <div className="font-bold text-stone-700">CSKH offline Tập sự</div>
+                              <div className="text-[10px] text-stone-400">Thử việc 2 tháng</div>
+                            </td>
+                            <td className="p-3 text-center">7.000.000đ</td>
+                            <td className="p-3">Không áp dụng</td>
+                            <td className="p-3 text-right font-bold text-stone-600">~ 7.0 Tr</td>
+                          </tr>
+                          
+                          {/* Junior */}
+                          <tr>
+                            <td className="p-3">
+                              <div className="font-bold text-emerald-800">CSKH offline Chính thức (B1)</div>
+                              <div className="text-[10px] text-stone-500">Dưới 1 năm kinh nghiệm</div>
+                            </td>
+                            <td className="p-3 text-center font-medium">8.000.000đ</td>
+                            <td className="p-3">
+                                <span className="block text-[10px]">~ 1.000.000đ</span>
+                            </td>
+                            <td className="p-3 text-right font-bold text-emerald-600 bg-emerald-50/50">9.0 - 10.0 Tr</td>
+                          </tr>
+
+                          {/* Senior */}
+                          <tr>
+                            <td className="p-3">
+                              <div className="font-bold text-emerald-800">CSKH offline Cao cấp (B2)</div>
+                              <div className="text-[10px] text-stone-500">Trên 1 năm, đạt chuẩn Bán thêm</div>
+                            </td>
+                            <td className="p-3 text-center font-medium">9.000.000đ</td>
+                            <td className="p-3">
+                                <span className="block text-[10px]">~ 2.000.000đ</span>
+                            </td>
+                            <td className="p-3 text-right font-bold text-emerald-600 bg-emerald-50/50">11.0 - 14.0 Tr</td>
+                          </tr>
+
+                          {/* Leader */}
+                          <tr>
+                            <td className="p-3">
+                              <div className="font-bold text-purple-800">Trưởng nhóm (Quản lý nhóm)</div>
+                              <div className="text-[10px] text-stone-500">Quản lý & Đào tạo</div>
+                            </td>
+                            <td className="p-3 text-center font-medium">12.000.000đ + PC</td>
+                            <td className="p-3">
+                                <span className="block text-[10px]">~ 3.000.000đ</span>
+                            </td>
+                            <td className="p-3 text-right font-bold text-purple-700 bg-purple-50">15.0 - 18.0 Tr</td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
+                    <p className="mt-2 text-[10px] text-stone-500 italic">* Lưu ý: Thu nhập thực tế phụ thuộc vào doanh số cá nhân và kết quả kinh doanh của chi nhánh.</p>
                   </section>
 
+                  {/* CALCULATION EXAMPLE */}
                   <section>
-                    <h3 className="text-xl font-bold text-emerald-700 mb-3">6.2. Ví dụ Tính lương Thực tế</h3>
-                    <div className="bg-white p-6 rounded-xl border border-stone-200 shadow-md">
-                        <div className="flex items-center gap-4 mb-4 border-b border-stone-100 pb-4">
-                            <div className="w-12 h-12 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center font-bold text-xl">L</div>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-3">14.2. Ví dụ Tính lương Thực tế</h3>
+                    <div className="bg-gradient-to-r from-stone-50 to-white border border-stone-200 rounded-xl p-6 shadow-sm relative overflow-hidden">
+                        {/* Decoration bg */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+                        <div className="absolute top-0 right-40 w-32 h-32 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+
+                        <div className="flex items-center gap-4 mb-6 border-b border-stone-200 pb-4 relative z-10">
+                            <div className="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 font-bold border-2 border-white shadow-sm text-lg">L</div>
                             <div>
-                                <h4 className="font-bold text-stone-800 text-lg">Nhân viên: Lương Thị Lan</h4>
-                                <p className="text-sm text-stone-500">Vị trí: KTV Chính thức (Cấp độ 2) • Làm việc: 26 công/tháng</p>
+                                <div className="font-bold text-stone-800 text-lg">Nhân viên: Lương Thị Lan</div>
+                                <div className="text-sm text-stone-500">Vị trí: CSKH offline Chính thức (B1) • Làm việc: 26 công/tháng</div>
                             </div>
                         </div>
-
-                        <div className="space-y-4 text-sm">
-                            {/* Item 1 */}
-                            <div className="flex justify-between items-center px-2">
-                                <span className="text-stone-600 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-stone-400"></div> 1. Lương cứng:</span>
-                                <span className="font-bold text-stone-800">5.000.000 đ</span>
+                        
+                        <div className="space-y-3 text-sm relative z-10">
+                            <div className="flex justify-between items-center py-1">
+                                <span className="text-stone-600 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-stone-400"></div> 1. Lương cứng (B1):</span>
+                                <span className="font-medium text-stone-800">8.000.000 đ</span>
+                            </div>
+                            <div className="flex justify-between items-center py-1 bg-emerald-50/50 -mx-2 px-2 rounded">
+                                <span className="text-stone-600 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> 2. Thưởng Tập thể (Đạt 100% Chỉ tiêu):</span>
+                                <span className="font-bold text-emerald-600">+ 1.000.000 đ</span>
+                            </div>
+                            <div className="flex justify-between items-start py-1 bg-orange-50/50 -mx-2 px-2 rounded">
+                                 <div className="flex flex-col">
+                                    <span className="text-stone-600 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div> 3. Hoa hồng cá nhân:</span>
+                                    <div className="text-[10px] text-stone-500 pl-4 mt-1">
+                                        • Doanh số bán gói 20Tr (3%): 600k
+                                    </div>
+                                </div>
+                                <span className="font-bold text-orange-600">+ 600.000 đ</span>
                             </div>
                             
-                            {/* Item 2 Detailed Breakdown */}
-                            <div className="bg-orange-50 p-4 rounded-lg border border-orange-100">
-                                <div className="flex justify-between items-start mb-3">
-                                    <span className="text-stone-700 flex items-center gap-2 font-bold"><div className="w-2 h-2 rounded-full bg-orange-400"></div> 2. Thu nhập Biến đổi (Tour & Tip):</span>
-                                    <span className="font-bold text-orange-600 text-lg">+ 7.800.000 đ</span>
-                                </div>
-                                
-                                {/* Explicit Assumptions Table */}
-                                <div className="bg-white rounded border border-orange-200 p-3 text-xs text-stone-600">
-                                    <div className="font-bold text-orange-800 mb-2 border-b border-orange-100 pb-1">BẢNG TÍNH GIẢ ĐỊNH HIỆU SUẤT:</div>
-                                    
-                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
-                                        <div>• Số ngày làm việc: <span className="font-bold text-stone-800">26 ngày</span></div>
-                                        <div>• Năng suất TB: <span className="font-bold text-stone-800">3 tour/ngày</span></div>
-                                        <div>• Tổng số Tour: <span className="font-bold text-stone-800">78 tour</span></div>
-                                        <div>• Giá dịch vụ TB: <span className="font-bold text-stone-800">500.000 đ</span></div>
-                                    </div>
-
-                                    <div className="space-y-1 pt-2 border-t border-dashed border-stone-300">
-                                        <div className="flex justify-between">
-                                            <span>- Tiền Tour (10% x 500k x 78):</span>
-                                            <span className="font-medium">3.900.000 đ</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span>- Tiền Tip TB (50k x 78):</span>
-                                            <span className="font-medium">3.900.000 đ</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div className="flex justify-between items-center pt-4 mt-2 border-t border-stone-300">
+                                <span className="font-bold text-lg text-emerald-900">TỔNG THU NHẬP (Trước thuế):</span>
+                                <span className="font-bold text-2xl text-emerald-600">9.600.000 VNĐ</span>
                             </div>
                         </div>
-
-                        <div className="mt-6 pt-4 border-t-2 border-dashed border-stone-200 flex justify-between items-end">
-                            <span className="font-bold text-emerald-900 uppercase text-sm">TỔNG THU NHẬP (Trước thuế):</span>
-                            <span className="font-bold text-2xl text-emerald-700">12.800.000 VNĐ</span>
-                        </div>
+                    </div>
+                    
+                    {/* Highlighted Note */}
+                    <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-lg text-center shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-red-400"></div>
+                        <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-1 flex items-center justify-center gap-2">
+                           <AlertTriangle size={14} /> Lưu ý quan trọng
+                        </p>
+                        <p className="text-sm text-red-800 font-medium">
+                            (* Thu nhập thực nhận sẽ trừ BHXH (10.5%) và Thuế TNCN theo quy định của nhà nước)
+                        </p>
                     </div>
                   </section>
 
-                  {/* New Section: Lộ trình thăng tiến */}
                   <section>
-                     <h3 className="text-xl font-bold text-emerald-700 mb-6">6.3. Lộ trình Thăng tiến & Yêu cầu Năng lực</h3>
-                     
-                     {/* List of Levels - Expanded View */}
-                     <div className="space-y-8">
-                       {Object.entries(levelsData).map(([key, level], index) => (
-                         <div key={key} className="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-                            {/* Header */}
-                            <div className={`p-4 border-b border-stone-100 flex items-center justify-between ${
-                                key === 'tap_su' ? 'bg-stone-50' : 
-                                key === 'chinh_thuc' ? 'bg-emerald-50' : 
-                                'bg-purple-50'
-                            }`}>
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                                        key === 'tap_su' ? 'bg-stone-200 text-stone-600' : 
-                                        key === 'chinh_thuc' ? 'bg-emerald-200 text-emerald-700' : 
-                                        'bg-purple-200 text-purple-700'
-                                    }`}>
-                                        0{index + 1}
-                                    </div>
-                                    <h4 className={`font-bold text-lg ${
-                                        key === 'tap_su' ? 'text-stone-800' : 
-                                        key === 'chinh_thuc' ? 'text-emerald-800' : 
-                                        'text-purple-800'
-                                    }`}>
-                                        {level.title}
-                                    </h4>
-                                </div>
-                                <span className="text-xs font-bold bg-white px-3 py-1 rounded-full shadow-sm border border-stone-100 text-stone-500 uppercase tracking-wider">
-                                    {level.desc}
-                                </span>
-                            </div>
+                    <h3 className="text-xl font-bold text-emerald-700 mb-3">14.3. Lộ trình Thăng tiến</h3>
+                    <div className="relative pl-8 border-l-2 border-stone-200 space-y-8 py-2 mb-8">
+                       
+                       <div className="relative">
+                          <div className="absolute -left-[41px] top-0 bg-stone-100 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center text-stone-500 font-bold text-xs shadow-sm">01</div>
+                          <div className="bg-white p-3 rounded border border-stone-100 shadow-sm">
+                             <h4 className="font-bold text-stone-800 text-sm">CSKH offline Tập sự</h4>
+                             <p className="text-xs text-stone-500 mt-1">Học việc, nắm vững kiến thức sản phẩm và quy trình Đón tiếp/Thanh toán cơ bản.</p>
+                          </div>
+                       </div>
 
-                            {/* Content Grid */}
-                            <div className="p-5 grid md:grid-cols-3 gap-4">
-                                {/* Culture */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2 font-bold text-stone-700 border-b border-stone-100 pb-1">
-                                        <Heart size={16} className="text-red-500"/> Văn hóa & Thái độ
-                                    </div>
-                                    <ul className="text-sm text-stone-600 space-y-2 list-disc pl-4">
-                                        {level.culture.map((item, idx) => <li key={idx}>{item}</li>)}
-                                    </ul>
+                       <div className="relative">
+                          <div className="absolute -left-[41px] top-0 bg-emerald-100 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center text-emerald-600 font-bold text-xs shadow-sm">02</div>
+                          <div className="bg-white p-3 rounded border border-emerald-100 shadow-sm">
+                             <h4 className="font-bold text-emerald-800 text-sm">CSKH offline Chính thức</h4>
+                             <p className="text-xs text-stone-600 mt-1">Thành thạo mọi nghiệp vụ. Bắt đầu tham gia chương trình đào tạo "Kỹ năng bán hàng tư vấn" để gia tăng thu nhập.</p>
+                          </div>
+                       </div>
+
+                       <div className="relative">
+                          <div className="absolute -left-[41px] top-0 bg-emerald-500 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xs shadow-sm">03</div>
+                          <div className="bg-white p-3 rounded border border-emerald-200 shadow-sm">
+                             <h4 className="font-bold text-emerald-900 text-sm">Trưởng nhóm CSKH offline</h4>
+                             <p className="text-xs text-stone-600 mt-1">Quản lý vận hành ca trực. Đào tạo nhân viên mới (Người hướng dẫn). Chịu trách nhiệm giải quyết khiếu nại khách hàng cấp độ 1.</p>
+                          </div>
+                       </div>
+
+                        <div className="relative">
+                          <div className="absolute -left-[41px] top-0 bg-purple-500 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center text-white font-bold text-xs shadow-sm">04</div>
+                          <div className="bg-white p-3 rounded border border-purple-200 shadow-sm">
+                             <h4 className="font-bold text-purple-900 text-sm">Quản lý Sảnh</h4>
+                             <p className="text-xs text-stone-600 mt-1">Quản lý toàn bộ bộ phận CSKH offline. Tham gia hoạch định chiến lược CSKH và Doanh thu cùng Ban Giám đốc.</p>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* INTERACTIVE COMPETENCY TABS */}
+                    <div>
+                       <div className="flex items-center gap-2 mb-4">
+                          <Target size={20} className="text-emerald-600"/>
+                          <h4 className="font-bold text-emerald-800 text-base">Chi tiết Yêu cầu Năng lực</h4>
+                       </div>
+                       
+                       {/* Tab Headers */}
+                       <div className="flex gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar">
+                          {competencyData.map((item, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setCompetencyLevel(index)}
+                              className={`px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all border-2
+                                ${competencyLevel === index 
+                                  ? `${item.color.replace('text-', 'border-').split(' ')[0]} border-current shadow-sm` 
+                                  : 'bg-white border-stone-100 text-stone-400 hover:bg-stone-50'
+                                }
+                              `}
+                            >
+                              {item.level}
+                            </button>
+                          ))}
+                       </div>
+
+                       {/* Tab Content */}
+                       <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden p-4 transition-all duration-300">
+                          <div className="flex justify-between items-center mb-4 border-b border-stone-100 pb-2">
+                             <div>
+                                <h5 className="font-bold text-lg text-stone-800">{competencyData[competencyLevel].level}</h5>
+                                <p className="text-xs text-stone-500">{competencyData[competencyLevel].sub}</p>
+                             </div>
+                             <div className={`px-3 py-1 rounded text-xs font-bold ${competencyData[competencyLevel].color}`}>
+                                Level {competencyLevel + 1}
+                             </div>
+                          </div>
+
+                          <div className="grid md:grid-cols-3 gap-4">
+                             {/* Culture Column */}
+                             <div className="bg-emerald-50/50 rounded-lg p-3 border border-emerald-100">
+                                <div className="flex items-center gap-2 mb-2 text-emerald-700 font-bold text-sm">
+                                   <Heart size={16}/> 1. Văn hóa & Thái độ
                                 </div>
-                                {/* Skills */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2 font-bold text-stone-700 border-b border-stone-100 pb-1">
-                                        <Wrench size={16} className="text-blue-500"/> Kỹ năng Nghiệp vụ
-                                    </div>
-                                    <ul className="text-sm text-stone-600 space-y-2 list-disc pl-4">
-                                        {level.skills.map((item, idx) => <li key={idx}>{item}</li>)}
-                                    </ul>
+                                <ul className="space-y-2">
+                                   {competencyData[competencyLevel].reqs.culture.map((req, idx) => (
+                                      <li key={idx} className="text-xs text-stone-700 flex items-start gap-2">
+                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0"></div>
+                                         <span>{req}</span>
+                                      </li>
+                                   ))}
+                                </ul>
+                             </div>
+
+                             {/* Skills Column */}
+                             <div className="bg-blue-50/50 rounded-lg p-3 border border-blue-100">
+                                <div className="flex items-center gap-2 mb-2 text-blue-700 font-bold text-sm">
+                                   <Wrench size={16}/> 2. Kỹ năng Nghiệp vụ
                                 </div>
-                                {/* Knowledge */}
-                                <div>
-                                    <div className="flex items-center gap-2 mb-2 font-bold text-stone-700 border-b border-stone-100 pb-1">
-                                        <Book size={16} className="text-orange-500"/> Kiến thức
-                                    </div>
-                                    <ul className="text-sm text-stone-600 space-y-2 list-disc pl-4">
-                                        {level.knowledge.map((item, idx) => <li key={idx}>{item}</li>)}
-                                    </ul>
+                                <ul className="space-y-2">
+                                   {competencyData[competencyLevel].reqs.skills.map((req, idx) => (
+                                      <li key={idx} className="text-xs text-stone-700 flex items-start gap-2">
+                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
+                                         <span>{req}</span>
+                                      </li>
+                                   ))}
+                                </ul>
+                             </div>
+
+                             {/* Knowledge Column */}
+                             <div className="bg-orange-50/50 rounded-lg p-3 border border-orange-100">
+                                <div className="flex items-center gap-2 mb-2 text-orange-700 font-bold text-sm">
+                                   <Book size={16}/> 3. Kiến thức
                                 </div>
-                            </div>
-                         </div>
-                       ))}
-                     </div>
+                                <ul className="space-y-2">
+                                   {competencyData[competencyLevel].reqs.knowledge.map((req, idx) => (
+                                      <li key={idx} className="text-xs text-stone-700 flex items-start gap-2">
+                                         <div className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-1.5 shrink-0"></div>
+                                         <span>{req}</span>
+                                      </li>
+                                   ))}
+                                </ul>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
                   </section>
                 </div>
               )
             },
             {
-              id: 7,
-              title: "KPI & Báo cáo (Spa)",
-              icon: <BarChart size={20} />,
+              id: 15,
+              title: "KPI & Hệ Thống Báo Cáo",
+              icon: <Target size={20} />,
               content: (
-                 <div className="space-y-6 text-stone-800">
-                   {/* 7.1 KPI */}
-                   <section>
-                     <h3 className="text-xl font-bold text-emerald-700 mb-4">7.1. Bộ Chỉ Số KPI Kỹ Thuật Viên</h3>
-                     <div className="grid grid-cols-2 gap-4">
-                        {/* Doanh thu */}
-                        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
-                           <div className="flex items-center justify-between mb-2">
-                              <strong className="text-sm text-stone-700">1. Năng suất (Tour)</strong>
-                              <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded">Quan trọng nhất</span>
+                <div className="space-y-8 text-stone-800">
+                   {/* Intro */}
+                   <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 flex gap-3">
+                     <Target size={24} className="text-emerald-600 flex-shrink-0 mt-1"/>
+                     <div>
+                        <h3 className="font-bold text-emerald-800 text-lg">Mục tiêu Chương</h3>
+                        <p className="text-sm text-emerald-900">
+                          Cung cấp bộ chỉ số đo lường hiệu quả công việc (KPIs) và hướng dẫn thực hiện các loại báo cáo định kỳ. 
+                          Đây là căn cứ để tính thưởng và đánh giá năng lực nhân viên hàng tháng.
+                        </p>
+                     </div>
+                  </div>
+
+                  {/* 15.1 KPIs */}
+                  <section>
+                     <h3 className="text-xl font-bold text-emerald-700 mb-4 flex items-center gap-2">
+                        15.1. Bộ Chỉ Số KPI Quan Trọng (Key Performance Indicators)
+                     </h3>
+                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* KPI 1 */}
+                        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                           <div className="flex justify-between items-start mb-2">
+                              <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Smile size={20}/></div>
+                              <span className="text-xs font-bold bg-stone-100 px-2 py-1 rounded text-stone-500">Trọng số: 30%</span>
                            </div>
-                           <p className="text-xs text-stone-500 mb-2">Số lượng tour thực hiện trong tháng.</p>
-                           <div className="w-full bg-stone-100 h-2 rounded-full"><div className="bg-emerald-500 h-2 rounded-full w-[80%]"></div></div>
-                           <p className="text-right text-xs font-bold mt-1 text-emerald-600">Mục tiêu: 100 Tour/tháng</p>
+                           <h4 className="font-bold text-stone-700 text-sm">CSAT Score</h4>
+                           <p className="text-xs text-stone-500 mb-2">Điểm hài lòng khách hàng</p>
+                           <div className="text-2xl font-bold text-blue-600">4.8<span className="text-sm text-stone-400">/5.0</span></div>
+                           <div className="mt-2 w-full bg-stone-100 rounded-full h-1.5">
+                              <div className="bg-blue-500 h-1.5 rounded-full" style={{width: '96%'}}></div>
+                           </div>
                         </div>
 
-                        {/* Doanh thu Upsell (Renumbered to 2) */}
-                        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm">
-                           <div className="flex items-center justify-between mb-2">
-                              <strong className="text-sm text-stone-700">2. Bán thêm (Upsell)</strong>
-                              <span className="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Thưởng nóng</span>
+                        {/* KPI 2 */}
+                        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                           <div className="flex justify-between items-start mb-2">
+                              <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg"><DollarSign size={20}/></div>
+                              <span className="text-xs font-bold bg-stone-100 px-2 py-1 rounded text-stone-500">Trọng số: 40%</span>
                            </div>
-                           <p className="text-xs text-stone-500 mb-2">Bán mỹ phẩm, tinh dầu, gói liệu trình.</p>
-                           <div className="w-full bg-stone-100 h-2 rounded-full"><div className="bg-yellow-500 h-2 rounded-full w-[20%]"></div></div>
-                           <p className="text-right text-xs font-bold mt-1 text-yellow-600">Thưởng 5-10% doanh số</p>
+                           <h4 className="font-bold text-stone-700 text-sm">Doanh thu Cá nhân</h4>
+                           <p className="text-xs text-stone-500 mb-2">% Đạt chỉ tiêu được giao</p>
+                           <div className="text-2xl font-bold text-emerald-600">100<span className="text-sm text-stone-400">%</span></div>
+                           <div className="mt-2 w-full bg-stone-100 rounded-full h-1.5">
+                              <div className="bg-emerald-500 h-1.5 rounded-full" style={{width: '100%'}}></div>
+                           </div>
                         </div>
 
-                        {/* Điểm hài lòng (Renumbered to 3 and full width for balance) */}
-                        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm col-span-2">
-                           <div className="flex items-center justify-between mb-2">
-                              <strong className="text-sm text-stone-700">3. Đánh giá (Rating)</strong>
-                              <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-1 rounded">Chất lượng</span>
+                        {/* KPI 3 */}
+                        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                           <div className="flex justify-between items-start mb-2">
+                              <div className="p-2 bg-orange-100 text-orange-600 rounded-lg"><TrendingUp size={20}/></div>
+                              <span className="text-xs font-bold bg-stone-100 px-2 py-1 rounded text-stone-500">Trọng số: 20%</span>
                            </div>
-                           <p className="text-xs text-stone-500 mb-2">Điểm trung bình khách đánh giá sau dịch vụ.</p>
-                           <div className="w-full bg-stone-100 h-2 rounded-full"><div className="bg-purple-500 h-2 rounded-full w-[95%]"></div></div>
-                           <p className="text-right text-xs font-bold mt-1 text-purple-600">Mục tiêu: &gt; 4.8 sao</p>
+                           <h4 className="font-bold text-stone-700 text-sm">Upsell / Cross-sell</h4>
+                           <p className="text-xs text-stone-500 mb-2">Tỷ lệ bán thêm thành công</p>
+                           <div className="text-2xl font-bold text-orange-600">15<span className="text-sm text-stone-400">%</span></div>
+                           <div className="mt-2 w-full bg-stone-100 rounded-full h-1.5">
+                              <div className="bg-orange-500 h-1.5 rounded-full" style={{width: '40%'}}></div>
+                           </div>
+                        </div>
+
+                        {/* KPI 4 */}
+                        <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-shadow">
+                           <div className="flex justify-between items-start mb-2">
+                              <div className="p-2 bg-red-100 text-red-600 rounded-lg"><AlertTriangle size={20}/></div>
+                              <span className="text-xs font-bold bg-stone-100 px-2 py-1 rounded text-stone-500">Trọng số: 10%</span>
+                           </div>
+                           <h4 className="font-bold text-stone-700 text-sm">Lỗi Vi phạm</h4>
+                           <p className="text-xs text-stone-500 mb-2">Sai sót quy trình/Thái độ</p>
+                           <div className="text-2xl font-bold text-red-600">0<span className="text-sm text-stone-400"> lỗi</span></div>
+                           <div className="mt-2 w-full bg-stone-100 rounded-full h-1.5">
+                              <div className="bg-red-500 h-1.5 rounded-full" style={{width: '0%'}}></div>
+                           </div>
                         </div>
                      </div>
-                   </section>
+                     <p className="text-xs text-stone-500 mt-2 italic">* KPI được đánh giá định kỳ hàng tháng. Mức thưởng sẽ dựa trên tổng điểm KPI đạt được.</p>
+                  </section>
 
-                   {/* 7.2 Báo cáo */}
+                  {/* 15.2 Reporting System */}
+                  <section>
+                     <h3 className="text-xl font-bold text-emerald-700 mb-4 flex items-center gap-2">
+                        15.2. Quy Định Báo Cáo
+                     </h3>
+                     <div className="flex flex-col gap-4">
+                        
+                        {/* Daily Report */}
+                        <div className="flex gap-4 items-start bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                           <div className="bg-emerald-100 text-emerald-600 p-3 rounded-full shrink-0"><FileText size={24}/></div>
+                           <div className="flex-1">
+                              <div className="flex justify-between items-center mb-2">
+                                 <h4 className="font-bold text-emerald-800">1. Báo cáo Doanh số Bán hàng (Sales Report)</h4>
+                                 <span className="text-xs font-bold bg-emerald-50 text-emerald-700 px-2 py-1 rounded border border-emerald-100">Bắt buộc</span>
+                              </div>
+                              <p className="text-sm text-stone-600 mb-3">Thực hiện khi kết thúc ca làm việc để bàn giao số liệu kinh doanh (đơn hàng đã tạo).</p>
+                              
+                              <div className="bg-stone-50 p-3 rounded border border-stone-200 text-xs font-mono text-stone-700">
+                                 <strong>Mẫu tin nhắn Zalo (Gửi nhóm "Carezone - Sales"):</strong><br/>
+                                 --------------------------------<br/>
+                                 BÁO CÁO SALES CA [SÁNG/CHIỀU]<br/>
+                                 - Ngày: dd/mm/yyyy<br/>
+                                 - Người báo cáo: [Tên nhân viên]<br/>
+                                 1. Tổng doanh số tạo đơn: xxx.xxx.xxx đ<br/>
+                                 2. Số lượng đơn hàng: xx đơn<br/>
+                                 3. Ghi chú (Khách VIP, sự vụ): [Nội dung...]<br/>
+                                 --------------------------------
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* Incident Report */}
+                        <div className="flex gap-4 items-start bg-white p-4 rounded-lg border border-stone-200 shadow-sm">
+                           <div className="bg-red-100 text-red-600 p-3 rounded-full shrink-0"><Siren size={24}/></div>
+                           <div className="flex-1">
+                              <div className="flex justify-between items-center mb-2">
+                                 <h4 className="font-bold text-red-800">2. Biên bản Sự cố (Incident Report)</h4>
+                                 <span className="text-xs font-bold bg-red-50 text-red-700 px-2 py-1 rounded border border-red-100">Khẩn cấp</span>
+                              </div>
+                              <p className="text-sm text-stone-600 mb-2">Lập ngay lập tức khi có sự việc bất thường: Tai nạn khách hàng, mất mát tài sản, xung đột, hỏng hóc lớn.</p>
+                              <ul className="list-disc pl-5 text-xs text-stone-600 space-y-1">
+                                 <li>Chụp ảnh hiện trường (nếu có thể).</li>
+                                 <li>Ghi rõ thời gian, địa điểm, người liên quan.</li>
+                                 <li>Báo cáo trực tiếp cho Quản lý Sảnh và gửi lên nhóm Zalo Vận hành.</li>
+                              </ul>
+                           </div>
+                        </div>
+
+                     </div>
+                  </section>
+
+                  {/* 15.3 QA Checklist */}
                    <section>
-                     <h3 className="text-xl font-bold text-emerald-700 mb-3">7.2. Quy định Báo cáo & Kiểm kê</h3>
+                     <h3 className="text-xl font-bold text-emerald-700 mb-4 flex items-center gap-2">
+                        15.3. Bảng Tiêu Chí Đánh Giá Chất Lượng (QA) & Tác Động Thăng Tiến
+                     </h3>
+                     <p className="text-sm text-stone-600 mb-3 italic">Bộ phận Kiểm soát chất lượng (QC) sẽ chấm điểm ngẫu nhiên. Điểm số này ảnh hưởng trực tiếp đến bậc lương và lộ trình thăng tiến.</p>
                      
-                     <div className="bg-white rounded-lg border border-stone-200 shadow-sm p-4 mb-4">
-                          <div className="flex justify-between items-center mb-3">
-                             <h4 className="font-bold text-stone-800 flex items-center gap-2">
-                                <div className="bg-stone-100 p-1.5 rounded text-stone-700"><ClipboardList size={18}/></div>
-                                Kiểm kê Vật tư tiêu hao
-                             </h4>
-                          </div>
-                          <p className="text-xs text-stone-600 mb-3">Thực hiện vào cuối Ca Chiều mỗi ngày để bộ phận Kho bổ sung kịp thời.</p>
-                          
-                          <table className="w-full text-xs text-left border border-stone-200">
-                              <thead className="bg-stone-50 font-bold">
-                                  <tr>
-                                      <th className="p-2 border-r">Mặt hàng</th>
-                                      <th className="p-2 border-r">Đơn vị</th>
-                                      <th className="p-2">Mức báo động (Đặt hàng ngay)</th>
-                                  </tr>
-                              </thead>
-                              <tbody className="divide-y divide-stone-100">
-                                  <tr>
-                                      <td className="p-2 border-r">Dầu nền (Dừa/Oliu)</td>
-                                      <td className="p-2 border-r">Lít</td>
-                                      <td className="p-2 text-red-600">&lt; 2 Lít</td>
-                                  </tr>
-                                  <tr>
-                                      <td className="p-2 border-r">Tinh dầu (Sả/Oải hương)</td>
-                                      <td className="p-2 border-r">Chai 100ml</td>
-                                      <td className="p-2 text-red-600">&lt; 1 Chai</td>
-                                  </tr>
-                                  <tr>
-                                      <td className="p-2 border-r">Quần lót giấy</td>
-                                      <td className="p-2 border-r">Cái</td>
-                                      <td className="p-2 text-red-600">&lt; 20 Cái</td>
-                                  </tr>
-                                  <tr>
-                                      <td className="p-2 border-r">Nến/Cồn đốt</td>
-                                      <td className="p-2 border-r">Viên/Lít</td>
-                                      <td className="p-2 text-red-600">&lt; 10 Viên</td>
-                                  </tr>
-                              </tbody>
-                          </table>
-                     </div>
-
-                     <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                        <h4 className="font-bold text-red-800 mb-2 text-sm flex items-center gap-2"><Siren size={18}/> Quy trình báo cáo Sự cố</h4>
-                        <p className="text-xs text-stone-700 mb-2">Khi khách phàn nàn về dịch vụ (đau, ngứa, không hài lòng):</p>
-                        <ol className="list-decimal pl-5 text-xs text-red-900 space-y-1">
-                            <li>Dừng ngay thao tác. Xin lỗi khách chân thành.</li>
-                            <li>Mời quản lý Spa vào xử lý. Không đôi co với khách.</li>
-                            <li>Ghi nhận vào sổ "Nhật ký sự cố" để rút kinh nghiệm.</li>
-                        </ol>
-                     </div>
-                   </section>
-
-                   {/* 7.3 Đánh giá chất lượng (New Section based on Image) */}
-                   <section>
-                     <h3 className="text-xl font-bold text-emerald-700 mb-3">7.3. Bảng Tiêu Chí Đánh Giá Chất Lượng (QA)</h3>
-                     <p className="text-sm text-stone-500 mb-3 italic">Bộ phận Kiểm soát chất lượng (QC) sẽ chấm điểm ngẫu nhiên. Điểm số này ảnh hưởng trực tiếp đến bậc lương và lộ trình thăng tiến.</p>
-                     
+                     {/* Bảng Tiêu Chí */}
                      <div className="overflow-x-auto bg-white rounded-lg border border-stone-200 shadow-sm mb-6">
-                        <table className="min-w-full text-xs text-left">
-                           <thead className="bg-stone-100 text-stone-700 font-bold uppercase">
+                        <table className="min-w-full text-sm text-left">
+                           <thead className="bg-stone-100 text-stone-700 font-bold">
                               <tr>
-                                  <th className="p-3 border-b w-[20%]">Hạng mục</th>
-                                  <th className="p-3 border-b w-[60%]">Tiêu chí đánh giá (Lỗi thường gặp)</th>
-                                  <th className="p-3 border-b w-[20%] text-right">Điểm trừ</th>
+                                  <th className="p-3 border-b w-[30%]">Hạng mục</th>
+                                  <th className="p-3 border-b w-[50%]">Tiêu chí đánh giá</th>
+                                  <th className="p-3 border-b text-center w-[20%]">Điểm trừ</th>
                               </tr>
                            </thead>
-                           <tbody className="divide-y divide-stone-100 text-stone-600">
+                           <tbody className="divide-y divide-stone-100">
                               <tr>
-                                  <td className="p-3 font-bold text-stone-800">1. Diện mạo</td>
-                                  <td className="p-3">Tóc không gọn, móng tay dài/bẩn, trang điểm quá đậm hoặc không trang điểm, quên đeo bảng tên.</td>
-                                  <td className="p-3 text-right font-bold text-red-500">-2đ / lỗi</td>
+                                  <td className="p-3 font-bold text-emerald-800">1. Diện mạo (Grooming)</td>
+                                  <td className="p-3 text-stone-600">Tóc không gọn, không trang điểm, đồng phục nhăn/bẩn, quên đeo bảng tên.</td>
+                                  <td className="p-3 text-center text-red-600 font-bold">-2đ / lỗi</td>
                               </tr>
                               <tr>
-                                  <td className="p-3 font-bold text-stone-800">2. Thái độ</td>
-                                  <td className="p-3">Nói chuyện riêng trong giờ làm, sử dụng điện thoại khi đang làm khách, không chào khách.</td>
-                                  <td className="p-3 text-right font-bold text-red-500">-5đ / lỗi</td>
+                                  <td className="p-3 font-bold text-emerald-800">2. Thái độ (Attitude)</td>
+                                  <td className="p-3 text-stone-600">Không đứng dậy chào khách, không cười, dùng điện thoại việc riêng, nói chuyện riêng to tiếng.</td>
+                                  <td className="p-3 text-center text-red-600 font-bold">-5đ / lỗi</td>
                               </tr>
                               <tr>
-                                  <td className="p-3 font-bold text-stone-800">3. Quy trình</td>
-                                  <td className="p-3">Quên mời nước, làm thiếu bước massage, không hỏi lực khách, làm sai thời gian (thiếu giờ).</td>
-                                  <td className="p-3 text-right font-bold text-red-500">-5đ / lỗi</td>
+                                  <td className="p-3 font-bold text-emerald-800">3. Quy trình (Process)</td>
+                                  <td className="p-3 text-stone-600">Quên tư vấn chương trình KM, quên nhắc khách cất giày, in sai bill, tạo nhầm đơn/món.</td>
+                                  <td className="p-3 text-center text-red-600 font-bold">-5đ / lỗi</td>
                               </tr>
-                              <tr>
-                                  <td className="p-3 font-bold text-stone-800">4. Vệ sinh</td>
-                                  <td className="p-3">Không thay ga gối sau mỗi khách, để dầu vương vãi trên sàn, phòng có mùi lạ/ẩm mốc.</td>
-                                  <td className="p-3 text-right font-bold text-red-500">-3đ / lỗi</td>
+                                <tr>
+                                  <td className="p-3 font-bold text-emerald-800">4. Vệ sinh (Hygiene)</td>
+                                  <td className="p-3 text-stone-600">Sảnh chờ bẩn, ly nước khách uống xong không dọn, quầy lễ tân bừa bộn.</td>
+                                  <td className="p-3 text-center text-red-600 font-bold">-3đ / lỗi</td>
                               </tr>
                            </tbody>
                         </table>
                      </div>
 
-                     <h4 className="font-bold text-emerald-800 mb-3 flex items-center gap-2">
-                        <Activity size={18}/> Quy chế Xét Duyệt Bậc Lương (Đánh giá Định Kỳ)
-                     </h4>
-                     <div className="grid md:grid-cols-2 gap-4">
-                        {/* Thăng bậc */}
-                        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 relative overflow-hidden">
-                           <div className="absolute top-0 right-0 p-2 opacity-10"><ArrowRight size={100} className="text-emerald-500"/></div>
-                           <strong className="text-emerald-800 block text-sm mb-3 uppercase">Điều kiện Thăng Bậc</strong>
-                           <ul className="list-disc pl-4 text-xs text-stone-700 space-y-2 relative z-10">
-                              <li>Điểm Đánh giá Chất lượng trung bình 3 tháng liên tiếp: <strong>≥ 96 điểm</strong> (Xuất sắc).</li>
-                              <li>Không vi phạm lỗi Thái độ hoặc Kỷ luật lao động.</li>
-                              <li>Đạt 100% chỉ tiêu Hiệu quả công việc (Năng suất Tour).</li>
-                              <li className="font-bold text-emerald-700">→ Kết quả: Được xét tăng 1 bậc lương cứng (Ví dụ: Từ KTV1 lên KTV2).</li>
-                           </ul>
-                        </div>
+                     {/* Quy Chế Thăng/Hạ Bậc */}
+                     <div className="bg-gradient-to-r from-stone-50 to-white p-5 rounded-lg border border-stone-200 shadow-sm">
+                        <h4 className="font-bold text-stone-800 text-base mb-4 flex items-center gap-2 pb-2 border-b border-stone-200">
+                           <TrendingUp size={20} className="text-blue-600"/> Quy chế Xét Duyệt Bậc Lương (Review Định Kỳ)
+                        </h4>
+                        <div className="grid md:grid-cols-2 gap-6">
+                           {/* Thăng Bậc */}
+                           <div className="bg-emerald-50 rounded-lg p-4 border border-emerald-100 relative overflow-hidden">
+                              <div className="absolute top-0 right-0 p-2 opacity-10"><ArrowRight size={64} className="text-emerald-600 transform -rotate-45"/></div>
+                              <strong className="text-emerald-800 text-sm block mb-2 flex items-center gap-2">
+                                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div> ĐIỀU KIỆN THĂNG BẬC (UP LEVEL)
+                              </strong>
+                              <ul className="text-xs text-stone-700 space-y-2 list-disc pl-4 relative z-10">
+                                 <li>Điểm QA trung bình 3 tháng liên tiếp: <strong>&ge; 96 điểm</strong> (Xuất sắc).</li>
+                                 <li>Không vi phạm lỗi Thái độ hoặc Kỷ luật lao động.</li>
+                                 <li>Đạt 100% chỉ tiêu Doanh thu cá nhân.</li>
+                                 <li className="font-bold text-emerald-700">&rarr; Kết quả: Được xét tăng 1 bậc lương cứng (Ví dụ: Từ B1 lên B2).</li>
+                              </ul>
+                           </div>
 
-                        {/* Hạ bậc */}
-                        <div className="bg-red-50 p-4 rounded-xl border border-red-200 relative overflow-hidden">
-                           <div className="absolute top-0 right-0 p-2 opacity-10"><ArrowDown size={100} className="text-red-500"/></div>
-                           <strong className="text-red-800 block text-sm mb-3 uppercase">Quy định Hạ Bậc (Từ 95 điểm trở xuống)</strong>
-                           <div className="space-y-3 relative z-10">
-                              <div className="bg-white p-2 rounded border border-red-100">
-                                 <div className="text-xs font-bold text-red-700 mb-1">Mức 1 (90 - 95 điểm):</div>
-                                 <p className="text-[10px] text-stone-600">Nhắc nhở/Đào tạo lại. Nếu lặp lại <strong>3 tháng</strong> → Cắt thưởng/Hạ bậc.</p>
-                              </div>
-                              <div className="bg-white p-2 rounded border border-red-100">
-                                 <div className="text-xs font-bold text-red-700 mb-1">Mức 2 (80 - dưới 90 điểm):</div>
-                                 <p className="text-[10px] text-stone-600">Biên bản Cảnh cáo. Nếu lặp lại <strong>2 tháng</strong> → Hạ 1 bậc lương ngay lập tức.</p>
-                              </div>
-                              <div className="bg-white p-2 rounded border border-red-100">
-                                 <div className="text-xs font-bold text-red-700 mb-1">Mức 3 (Dưới 80 điểm):</div>
-                                 <p className="text-[10px] text-stone-600">Hạ bậc hoặc <strong>Sa thải</strong> (Do không đáp ứng tiêu chuẩn dịch vụ).</p>
-                              </div>
+                           {/* Hạ Bậc */}
+                           <div className="bg-red-50 rounded-lg p-4 border border-red-100 relative overflow-hidden">
+                              <div className="absolute top-0 right-0 p-2 opacity-10"><ArrowDown size={64} className="text-red-600"/></div>
+                              <strong className="text-red-800 text-sm block mb-2 flex items-center gap-2">
+                                 <div className="w-2 h-2 rounded-full bg-red-500"></div> QUY ĐỊNH HẠ BẬC (TỪ 95 ĐIỂM TRỞ XUỐNG)
+                              </strong>
+                              <ul className="text-xs text-stone-700 space-y-2 list-none pl-0 relative z-10">
+                                 <li className="bg-white/80 p-2 rounded border border-red-100 shadow-sm">
+                                    <strong className="text-orange-700 block border-b border-orange-100 pb-1 mb-1">Mức 1 (90 - 95 điểm):</strong>
+                                    <span>Nhắc nhở/Đào tạo lại. Nếu lặp lại <strong>3 tháng</strong> &rarr; Cắt thưởng/Hạ bậc.</span>
+                                 </li>
+                                 <li className="bg-white/80 p-2 rounded border border-red-100 shadow-sm">
+                                    <strong className="text-red-600 block border-b border-red-100 pb-1 mb-1">Mức 2 (80 - dưới 90 điểm):</strong>
+                                    <span>Biên bản Cảnh cáo. Nếu lặp lại <strong>2 tháng</strong> &rarr; Hạ 1 bậc lương ngay lập tức.</span>
+                                 </li>
+                                 <li className="bg-white/80 p-2 rounded border border-red-100 shadow-sm">
+                                    <strong className="text-red-800 block border-b border-red-100 pb-1 mb-1">Mức 3 (Dưới 80 điểm):</strong>
+                                    <span><strong>Hạ bậc hoặc Sa thải</strong> (Do không đáp ứng tiêu chuẩn dịch vụ cơ bản).</span>
+                                 </li>
+                              </ul>
                            </div>
                         </div>
+                        <p className="text-[10px] text-stone-500 mt-3 italic text-center">
+                           * Mức An toàn (Standard): Điểm QA duy trì trên 95 điểm để giữ nguyên chế độ hiện tại.
+                        </p>
                      </div>
                    </section>
-                 </div>
+                </div>
               )
             }
           ];
@@ -1201,7 +1380,7 @@
                       <h1 className="font-bold text-lg leading-tight">Carezone<br/>Bình Dương</h1>
                     </div>
                   </div>
-                  <p className="text-xs text-emerald-300 mt-1">Sổ tay vận hành v2.8 (VN)</p>
+                  <p className="text-xs text-emerald-300 mt-1">SOP Manual v2.8 (VN)</p>
                 </div>
 
                 {/* Search Box */}
@@ -1286,8 +1465,15 @@
           );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        // Render
+        const root = createRoot(document.getElementById('root'));
         root.render(<CarezoneSOP />);
+        
+        // Tắt loading sau khi render xong
+        setTimeout(() => {
+            const loader = document.getElementById('loading');
+            if(loader) loader.style.display = 'none';
+        }, 500);
     </script>
 </body>
 </html>
